@@ -1,0 +1,472 @@
+---
+name: cv181x-media
+description: "Expert guidance for CV181X/CV182X multimedia API development on Sophgo platforms (SG200X series). Provides comprehensive knowledge of VI (Video Input), VPSS (Video Processing), VENC (Video Encoding), VO (Video Output), SYS (System Control), VB (Video Buffer Pool), RGN (Region/OSD), and GDC (Geometric Distortion Correction) modules. Use this skill when working with: (1) Video capture from camera sensors, (2) Video encoding (H.264/H.265/JPEG/MJPEG), (3) Video processing (scaling, rotation, cropping, format conversion), (4) Video display output, (5) Module binding and system integration, (6) On-screen display (OSD) and graphics overlay, (7) Lens distortion correction and fisheye dewarp, (8) Video buffer memory management, (9) Debugging multimedia applications, (10) Building multimedia applications (surveillance cameras, video conferencing, AI vision systems, etc.) on CV181X/CV182X platforms."
+---
+
+# CV181X/CV182X Multimedia API Expert
+
+## Overview
+
+This skill provides expert guidance for developing multimedia applications on Sophgo CV181X/CV182X platforms (SG200X series) using the CVI MPI (Media Processing Interface) API. It covers video capture, processing, encoding, output, and system integration for embedded multimedia applications.
+
+## Core Capabilities
+
+### 1. Module Selection and Architecture Design
+
+When designing multimedia applications, choose the right combination of modules:
+
+**Primary Modules**:
+- **VI (Video Input)**: Camera sensor input, ISP pipeline
+- **VPSS (Video Processing)**: Scaling, cropping, rotation, format conversion
+- **VENC (Video Encoding)**: H.264/H.265/JPEG/MJPEG encoding
+- **VO (Video Output)**: LCD/HDMI display
+- **SYS (System Control)**: Module binding, memory management
+- **VB (Video Buffer Pool)**: Unified video memory management
+- **RGN (Region Management)**: OSD, graphics overlay, privacy masking
+- **GDC (Geometric Distortion Correction)**: Lens correction, fisheye dewarp, rotation
+
+**Decision Framework**:
+
+1. **What is the data source?**
+   - Camera sensor → Use VI
+   - Network stream → Use VDEC (decoder)
+   - File/Memory → Use manual frame operations
+
+2. **What processing is needed?**
+   - Resolution change → Use VPSS
+   - Rotation/Crop → Use VPSS or VI (VI has limited support)
+   - Format conversion → Use VPSS
+   - None → Skip VPSS, bind VI directly to VENC/VO
+
+3. **What is the output?**
+   - Network/File → Use VENC
+   - Display → Use VO
+   - Custom processing → Use GetFrame/ReleaseFrame
+
+4. **How should modules connect?**
+   - Real-time, low latency → Use online mode (SYS_Bind)
+   - Custom processing → Use offline mode (GetFrame/SendFrame)
+
+**Common Pipelines**:
+```
+Video Surveillance:  VI → VPSS → VENC → Network
+Video Doorbell:      VI → VPSS → VO (display) + VENC (record)
+AI Vision:           VI → VPSS → User (TPU) → VPSS → VENC/VO
+Video Conference:    VI → VPSS → VENC (send) + VDEC → VPSS → VO (receive)
+```
+
+For detailed scenarios, see [references/scenarios.md](references/scenarios.md).
+
+### 2. Module Configuration Workflow
+
+**Standard Initialization Pattern** (applies to all modules):
+
+1. **Initialize system**: `CVI_SYS_Init()`
+2. **Configure module**: Set attributes (resolution, format, etc.)
+3. **Enable/Start module**: Enable device/channel, start processing
+4. **Bind modules**: Connect modules for automatic data flow (optional)
+5. **Processing**: Automatic (online) or manual (offline)
+6. **Cleanup**: Unbind → Disable/Stop → Destroy
+
+**Online Mode (Recommended)**:
+```
+CVI_SYS_Init()
+→ Configure all modules (VI, VPSS, VENC)
+→ Start all modules
+→ Bind modules: CVI_SYS_Bind(src, dest)
+→ Automatic data flow (no manual frame handling)
+→ Only retrieve encoded bitstream from VENC
+```
+
+**Offline Mode (Advanced)**:
+```
+CVI_SYS_Init()
+→ Configure modules
+→ Start modules
+→ Loop:
+  - GetFrame from source
+  - Process frame (custom algorithm)
+  - SendFrame to destination
+  - ReleaseFrame
+```
+
+### 3. Video Input (VI) Operations
+
+**When to consult**: Camera sensor integration, video capture, ISP configuration
+
+**Key Operations**:
+- Configure sensor interface (MIPI, DVP)
+- Setup ISP pipeline (pipe configuration)
+- Enable output channels (multiple resolutions)
+- Crop, rotate, flip operations
+- Bind to VPSS/VENC/VO
+
+**Quick Start**:
+```
+1. CVI_VI_SetDevAttr() - Configure sensor interface
+2. CVI_VI_EnableDev() - Enable device
+3. CVI_VI_CreatePipe() - Create ISP pipe
+4. CVI_VI_SetPipeAttr() - Configure pipe (resolution, format)
+5. CVI_VI_StartPipe() - Start processing
+6. CVI_VI_SetChnAttr() - Configure channel (output resolution)
+7. CVI_VI_EnableChn() - Enable channel
+8. CVI_SYS_Bind() - Bind to next module
+```
+
+**Reference**: See [references/vi.md](references/vi.md) for complete API list and workflows.
+
+### 4. Video Processing (VPSS) Operations
+
+**When to consult**: Scaling, cropping, rotation, format conversion, image enhancement
+
+**Key Operations**:
+- Multi-resolution output (1 input → up to 4 outputs)
+- Scaling (up to 16x upscale, 1/32 downscale)
+- Rotation (0/90/180/270)
+- Cropping (group-level and channel-level)
+- Format conversion (YUV420/YUV422/RGB)
+- Image enhancement (brightness, contrast, saturation, hue)
+
+**Quick Start**:
+```
+1. CVI_VPSS_CreateGrp() - Create VPSS group
+2. CVI_VPSS_SetGrpAttr() - Set input size and format
+3. CVI_VPSS_SetChnAttr() - Set output size and format (per channel)
+4. CVI_VPSS_StartGrp() - Start group
+5. CVI_VPSS_EnableChn() - Enable channels
+6. CVI_SYS_Bind() - Bind from VI and to VENC/VO
+```
+
+**Multi-Resolution Example**:
+```c
+// Create group for 1080p input
+CVI_VPSS_CreateGrp(VpssGrp, &grpAttr);  // Input: 1920x1080
+
+// Setup 3 output channels
+SetChnAttr(VpssGrp, 0, 1920, 1080);    // Chn0: 1080p (main stream)
+SetChnAttr(VpssGrp, 1, 1280, 720);     // Chn1: 720p (sub stream)
+SetChnAttr(VpssGrp, 2, 640, 360);      // Chn2: 360p (mobile stream)
+```
+
+**Reference**: See [references/vpss.md](references/vpss.md) for complete API list and performance considerations.
+
+### 5. Video Encoding (VENC) Operations
+
+**When to consult**: H.264/H.265/JPEG/MJPEG encoding, bitstream generation, rate control
+
+**Key Operations**:
+- Create encoding channel (H.264/H.265/JPEG/MJPEG)
+- Configure rate control (CBR, VBR, FIXQP)
+- Set GOP structure
+- Retrieve encoded bitstream
+- ROI encoding (better quality for specific regions)
+- Force IDR frames
+
+**Quick Start**:
+```
+1. CVI_VENC_CreateChn() - Create channel with codec type
+2. CVI_VENC_SetRcParam() - Set bitrate and rate control mode
+3. CVI_VENC_StartRecvFrame() - Start accepting frames
+4. CVI_SYS_Bind() - Bind from VI/VPSS
+5. Loop:
+   - CVI_VENC_GetStream() - Get encoded bitstream
+   - Process/Save bitstream
+   - CVI_VENC_ReleaseStream() - Release buffer
+```
+
+**Rate Control Modes**:
+- **CBR** (Constant Bitrate): Best for streaming (stable bandwidth)
+- **VBR** (Variable Bitrate): Best for storage (better quality)
+- **FIXQP** (Fixed QP): Best for quality testing
+
+**Reference**: See [references/venc.md](references/venc.md) for codec configuration and bitrate guidelines.
+
+### 6. Video Output (VO) Operations
+
+**When to consult**: LCD/HDMI display, video overlay, screen output
+
+**Key Operations**:
+- Configure display interface (MIPI DSI, I8080, RGB)
+- Setup video layer and channels
+- Multi-window display
+- Rotation and mirroring
+- Image enhancement (brightness, contrast, gamma)
+
+**Quick Start**:
+```
+1. CVI_VO_SetPubAttr() - Set interface type and resolution
+2. CVI_VO_Enable() - Enable device
+3. CVI_VO_SetVideoLayerAttr() - Configure layer
+4. CVI_VO_EnableVideoLayer() - Enable layer
+5. CVI_VO_SetChnAttr() - Configure channel (window position/size)
+6. CVI_VO_EnableChn() - Enable channel
+7. CVI_SYS_Bind() - Bind from VI/VPSS
+```
+
+**Reference**: See [references/vo.md](references/vo.md) for display configuration and multi-channel setup.
+
+### 7. System Integration (SYS) Operations
+
+**When to consult**: Module binding, memory management, system configuration
+
+**Key Operations**:
+- Initialize/cleanup media system
+- Bind modules for zero-copy data flow
+- Allocate ION memory for custom buffers
+- Configure VI/VPSS working modes (online/offline)
+- DMA memory copy
+
+**Module Binding Pattern**:
+```c
+// Define source and destination
+MMF_CHN_S stSrcChn = {.enModId = CVI_ID_VI, .s32DevId = 0, .s32ChnId = 0};
+MMF_CHN_S stDestChn = {.enModId = CVI_ID_VPSS, .s32DevId = 0, .s32ChnId = 0};
+
+// Bind modules (must be done AFTER modules are configured and started)
+CVI_SYS_Bind(&stSrcChn, &stDestChn);
+
+// Data flows automatically from VI to VPSS
+// ...
+
+// Cleanup: Unbind BEFORE stopping modules
+CVI_SYS_UnBind(&stSrcChn, &stDestChn);
+```
+
+**Important Rules**:
+- Always call `CVI_SYS_Init()` first
+- Bind modules AFTER they are configured and started
+- Unbind BEFORE stopping/destroying modules
+- Always call `CVI_SYS_Exit()` when shutting down
+
+**Reference**: See [references/sys.md](references/sys.md) for binding patterns and memory management.
+
+### 8. Video Buffer Pool (VB) Operations
+
+**When to consult**: Memory allocation, buffer pool configuration, VB pool exhaustion
+
+**Key Operations**:
+- Configure common buffer pools (shared by all modules)
+- Create private pools for specific modules
+- Monitor buffer usage and tune pool sizes
+- Troubleshoot "Out of buffers" errors
+
+**Quick Start**:
+```
+1. CVI_VB_SetConfig() - Configure pools (BEFORE CVI_VB_Init)
+2. CVI_VB_Init() - Initialize and allocate pools
+3. CVI_SYS_Init() - Initialize system (uses VB pools)
+4. Modules automatically use VB pools
+5. Monitor: cat /proc/umap/vb
+```
+
+**Buffer Size Calculation**:
+- YUV420: Width × Height × 3 / 2
+- YUV422: Width × Height × 2
+- Account for alignment (typically 32-byte aligned width)
+
+**Reference**: See [references/vb.md](references/vb.md) for pool configuration, buffer calculation, and optimization.
+
+### 9. Region Management (RGN) Operations
+
+**When to consult**: OSD (timestamps, labels), privacy masking, bounding boxes, graphics overlay
+
+**Key Operations**:
+- Create OVERLAY regions (bitmap graphics with transparency)
+- Create COVER regions (solid privacy masks)
+- Create LINE regions (detection boxes, tracking)
+- Create MOSAIC regions (privacy blur)
+- Update OSD content dynamically
+
+**Quick Start (Timestamp OSD)**:
+```
+1. CVI_RGN_Create() - Create region
+2. CVI_RGN_SetBitMap() - Set text/graphics bitmap
+3. CVI_RGN_AttachToChn() - Attach to VI/VPSS/VENC
+4. CVI_RGN_UpdateCanvas() - Update dynamically
+```
+
+**Attachment Targets**:
+- Attach to **VI**: OSD on all outputs
+- Attach to **VPSS**: OSD on specific resolution stream
+- Attach to **VENC**: OSD only in encoded bitstream
+
+**Reference**: See [references/rgn.md](references/rgn.md) for region types, pixel formats, and dynamic updates.
+
+### 10. Geometric Distortion Correction (GDC) Operations
+
+**When to consult**: Lens distortion correction, fisheye dewarp, arbitrary rotation, perspective correction
+
+**Key Operations**:
+- LDC (Lens Distortion Correction) for barrel/pincushion
+- Fisheye unwarp (convert fisheye to rectilinear)
+- Arbitrary angle rotation (not limited to 90°)
+- Custom mesh transformation
+
+**Quick Start (LDC)**:
+```
+1. CVI_GDC_BeginJob() - Create job
+2. CVI_GDC_AddLDCTask() - Add correction task
+3. CVI_GDC_EndJob() - Execute and wait
+```
+
+**Use Cases**:
+- Wide-angle surveillance cameras (barrel correction)
+- 360° fisheye cameras (dewarp to quad view)
+- Document scanning (perspective correction)
+- Rotated camera mounting (arbitrary rotation)
+
+**Reference**: See [references/gdc.md](references/gdc.md) for LDC parameters, fisheye modes, and mesh generation.
+
+### 11. Debugging and Troubleshooting
+
+**When to consult**: No video output, frame drops, memory errors, performance issues
+
+**Key Tools**:
+- `/proc/umap/*` - Module runtime status (vi, vpss, venc, vo, vb, rgn, gdc)
+- `/proc/cvitek/log` - Log level control
+- `dmesg` - Kernel driver logs
+- `CVI_*_QueryStatus()` - Module status APIs
+
+**Common Issues**:
+```bash
+# No video / Frame drops
+cat /proc/umap/vi        # Check FrameCount, LostFrames
+cat /proc/umap/vb        # Check Free buffers
+
+# Bitrate issues
+cat /proc/umap/venc      # Check current bitrate, StreamBufUsage
+
+# OSD not visible
+cat /proc/umap/rgn       # Check region attachment
+
+# Enable debug logs
+echo "VI=7" > /proc/cvitek/log
+echo "VPSS=7" > /proc/cvitek/log
+```
+
+**Reference**: See [references/debug.md](references/debug.md) for comprehensive debugging guide and troubleshooting checklist.
+
+## Common Tasks
+
+### Building a Video Surveillance Camera
+
+**Requirement**: Capture video → Encode H.265 → Stream to network
+
+**Steps**:
+1. Consult [references/scenarios.md](references/scenarios.md) → Scenario 1
+2. Follow API workflow for VI → VPSS → VENC pipeline
+3. Configure multi-resolution encoding (main + sub streams)
+4. Implement bitstream retrieval loop
+5. Send bitstream to network (RTSP/RTMP/etc.)
+
+### Implementing AI Vision Processing
+
+**Requirement**: Capture video → TPU inference → Draw results → Encode
+
+**Steps**:
+1. Consult [references/scenarios.md](references/scenarios.md) → Scenario 5
+2. Use VPSS to generate inference input (e.g., 640x640)
+3. Get frame from VPSS using `CVI_VPSS_GetChnFrame()`
+4. Run TPU inference (via SSCMA or custom model)
+5. Draw bounding boxes on frame
+6. Send modified frame to encoder or display
+
+### Adding Local Display to Camera
+
+**Requirement**: Camera preview on LCD screen
+
+**Steps**:
+1. Consult [references/vo.md](references/vo.md) for VO setup
+2. Configure VO for LCD interface (MIPI DSI or I8080)
+3. Setup VI → VPSS → VO pipeline
+4. VPSS channel should match LCD resolution
+5. Bind VPSS to VO for automatic display
+
+## Reference Documentation
+
+Load these references when working with specific modules:
+
+- **[references/vi.md](references/vi.md)** - Video Input: Complete API list, device/pipe/channel management, capture workflows
+- **[references/vpss.md](references/vpss.md)** - Video Processing: Scaling, rotation, cropping, format conversion, performance tips
+- **[references/venc.md](references/venc.md)** - Video Encoding: H.264/H.265/JPEG encoding, rate control, GOP configuration
+- **[references/vo.md](references/vo.md)** - Video Output: Display setup, layer/channel management, interface configuration
+- **[references/sys.md](references/sys.md)** - System Control: Module binding, memory management, system initialization
+- **[references/vb.md](references/vb.md)** - Video Buffer Pool: Common/private pools, buffer calculation, memory optimization
+- **[references/rgn.md](references/rgn.md)** - Region Management: OSD overlay, privacy masking, LINE/COVER/MOSAIC types
+- **[references/gdc.md](references/gdc.md)** - Geometric Distortion Correction: LDC, fisheye dewarp, rotation, mesh transformation
+- **[references/debug.md](references/debug.md)** - Debugging Guide: /proc filesystem, log system, troubleshooting checklist
+- **[references/scenarios.md](references/scenarios.md)** - Common Scenarios: 6 real-world application examples with complete pipelines
+
+## Key Principles
+
+### 1. Online vs Offline Mode
+
+**Online Mode (Recommended)**:
+- Use `CVI_SYS_Bind()` to connect modules
+- Zero-copy data flow (hardware handles frame transfer)
+- Lower latency, lower CPU usage
+- **Use when**: Standard video pipeline, no custom processing needed
+
+**Offline Mode (Advanced)**:
+- Use `GetFrame()` and `SendFrame()` APIs
+- Manual frame handling (CPU-involved)
+- Higher flexibility for custom processing
+- **Use when**: Custom algorithms (AI, watermark, etc.), selective frame processing
+
+### 2. Memory Management
+
+**Automatic (VB Pool)**:
+- Media modules (VI/VPSS/VENC) use VB pools automatically
+- Recommended for standard pipelines
+- No manual allocation needed
+
+**Manual (ION)**:
+- Use `CVI_SYS_IonAlloc()` for custom buffers
+- Required for custom frame manipulation
+- Use non-cached for DMA, cached for CPU processing
+
+### 3. Performance Optimization
+
+- **Minimize VPSS groups**: Reuse groups when possible
+- **Use hardware binding**: Avoid manual frame loops
+- **Match resolutions**: Align sensor → VPSS → VENC sizes
+- **Choose appropriate codecs**: H.265 for better compression, H.264 for compatibility
+- **Monitor status**: Use `QueryStatus()` APIs to check frame rates and buffer usage
+
+### 4. Error Handling
+
+All CVI APIs return `CVI_S32`:
+- `CVI_SUCCESS` (0): Operation succeeded
+- Non-zero: Error code (check SDK documentation)
+
+Always check return values for robust applications.
+
+## SDK Location
+
+**Header files**: `/cvi_mpi/include/`
+- `cvi_vi.h`, `cvi_vpss.h`, `cvi_venc.h`, `cvi_vo.h`, `cvi_sys.h`
+- `cvi_vb.h`, `cvi_region.h`, `cvi_gdc.h`
+- `linux/cvi_comm_*.h` (common definitions and structures)
+
+**Libraries**: `/cvi_mpi/lib/`
+- `libsys.so`, `libvpss.so`, `libvi.so`, `libvenc.so`, `libvo.so`
+- `libvb.so`, `librgn.so`, `libgdc.so`
+
+**Samples**: `/cvi_mpi/sample/`
+- `vio/` - VI/VO examples
+- `venc/` - Encoding examples
+- `region/` - RGN/OSD examples
+
+## Notes
+
+- **Initialization order**: `CVI_VB_SetConfig()` → `CVI_VB_Init()` → `CVI_SYS_Init()` → Modules
+- Always check VB pool configuration before system init
+- Configure modules BEFORE binding
+- Unbind modules BEFORE destroying
+- Release frames after GetFrame operations
+- Always check return values for error handling
+- Use `/proc/umap/*` to monitor runtime status
+- Maximum VI channels: 4 per pipe
+- Maximum VPSS channels: 4 per group
+- Maximum RGN layers: Platform-dependent (typically 4-8)
+- Check hardware capabilities for resolution/framerate limits
