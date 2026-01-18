@@ -1,6 +1,6 @@
-# CV181X/CV182X Multimedia API Skill
+# CV181X/CV182X/CV180X Multimedia API Skill
 
-Expert guidance skill for CV181X/CV182X multimedia development on Sophgo platforms.
+Expert guidance skill for CV181X/CV182X/CV180X multimedia development on Sophgo platforms.
 
 ## Overview
 
@@ -8,16 +8,27 @@ This skill provides comprehensive knowledge of:
 - VI (Video Input)
 - VPSS (Video Processing)
 - VENC (Video Encoding)
+- VDEC (Video Decoding)
 - VO (Video Output)
+- Audio (AI/AO/AENC/ADEC/VQE)
 - SYS (System Control)
 - VB (Video Buffer Pool)
-- RGN (Region/OSD)
-- GDC (Geometric Distortion Correction)
+- REGION (Regional Management/OSD)
+- GDC (Geometric Distortion Correction Subsystem)
 - Debugging and troubleshooting
 
 ## Version
 
-Current Version: **v1.0.0**
+Current Version: **v2.0.0**
+
+## What's New in v2.0.0
+
+- **New Modules**: VDEC (Video Decoding) and Audio subsystem documentation
+- **Platform Coverage**: Complete CV180X vs CV181X platform differences
+- **Enhanced Coverage**: All 29 todo.md items implemented
+- **Complete API Reference**: 11 function categories for SYS, 8 for VB, 10 for VPSS
+
+See [CHANGELOG.md](CHANGELOG.md) for complete details.
 
 ## Structure
 
@@ -25,16 +36,19 @@ Current Version: **v1.0.0**
 cv181x-media/
 ├── SKILL.md              # Main skill definition
 ├── references/           # Module reference documentation
-│   ├── vi.md
-│   ├── vpss.md
-│   ├── venc.md
-│   ├── vo.md
-│   ├── sys.md
-│   ├── vb.md
-│   ├── rgn.md
-│   ├── gdc.md
-│   ├── debug.md
-│   └── scenarios.md
+│   ├── vi.md            # Video Input (4-layer architecture)
+│   ├── vpss.md          # Video Processing (10 features)
+│   ├── venc.md          # Video Encoding
+│   ├── vdec.md          # Video Decoding (NEW)
+│   ├── vo.md            # Video Output
+│   ├── audio.md         # Audio Subsystem (NEW)
+│   ├── sys.md           # System Control (11 categories)
+│   ├── vb.md            # Video Buffer (8 categories)
+│   ├── rgn.md           # Region Management
+│   ├── gdc.md           # Geometric Distortion Correction
+│   ├── debug.md         # Debugging guide
+│   ├── troubleshooting.md
+│   └── scenarios.md     # Common scenarios
 ├── scripts/              # Automation scripts
 │   ├── update_from_sdk.sh
 │   ├── learn_from_usage.py
