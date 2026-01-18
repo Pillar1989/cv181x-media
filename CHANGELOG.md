@@ -194,7 +194,7 @@ This release adds comprehensive documentation for all CV181X/CV182X/CV180X multi
   - 10 major features explicitly documented
   - Mirror/Flip operations
   - Overlay/OverlayEx support
-  - Stitch (拼接) functionality
+  - Stitch functionality
   - Deep Learning Pre-processing for TPU
   - Scale performance (32x upscale, 1/32 downscale)
 

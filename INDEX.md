@@ -1,156 +1,156 @@
-# CV181X-Media Skill 快速导航
+# CV181X-Media Skill Quick Navigation
 
-> CV181X/CV182X/CV180X 多媒体 API 专家指南 v2.1.0
+> Expert Guide for CV181X/CV182X/CV180X Multimedia API v2.1.0
 
-**最后更新**: 2026-01-18
-**适用平台**: Sophgo SG200X 系列 (CV181X/CV182X/CV180X)
+**Last Updated**: 2026-01-18
+**Supported Platforms**: Sophgo SG200X Series (CV181X/CV182X/CV180X)
 
 ---
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 新手入门
-1. 📖 [SKILL.md](SKILL.md) - 主文档，从这里开始
-2. 📋 [README.md](README.md) - 项目概述和版本说明
-3. 🔄 [CHANGELOG.md](CHANGELOG.md) - 版本历史和更新记录
+### For Beginners
+1. 📖 [SKILL.md](SKILL.md) - Main documentation, start here
+2. 📋 [README.md](README.md) - Project overview and version information
+3. 🔄 [CHANGELOG.md](CHANGELOG.md) - Version history and update records
 
-### 我想要...
+### I Want To...
 
-| 需求 | 推荐文档 |
+| Requirement | Recommended Documentation |
 |------|---------|
-| **了解整体架构** | [SKILL.md - Module Selection](SKILL.md#1-module-selection-and-architecture-design) |
-| **快速配置摄像头** | [VI Module Reference](references/vi.md) - 完整配置流程 |
-| **实现视频编码** | [VENC Module Reference](references/venc.md) - H.264/H.265/JPEG |
-| **处理视频流** | [VPSS Module Reference](references/vpss.md) - 缩放/旋转/裁剪 |
-| **保存/显示视频** | [VO Module Reference](references/vo.md) - LCD/HDMI输出 |
-| **调试问题** | [Debug Guide](references/debug.md) - /proc文件系统 |
-| **解决错误** | [Troubleshooting](references/troubleshooting.md) - 错误代码和解决方案 |
-| **并发场景** | [Concurrent Scenarios](references/concurrent.md) - 多场景设计 |
+| **Understand overall architecture** | [SKILL.md - Module Selection](SKILL.md#1-module-selection-and-architecture-design) |
+| **Quickly configure camera** | [VI Module Reference](references/vi.md) - Complete configuration workflow |
+| **Implement video encoding** | [VENC Module Reference](references/venc.md) - H.264/H.265/JPEG |
+| **Process video streams** | [VPSS Module Reference](references/vpss.md) - Scaling/Rotation/Cropping |
+| **Save/Display video** | [VO Module Reference](references/vo.md) - LCD/HDMI output |
+| **Debug issues** | [Debug Guide](references/debug.md) - /proc filesystem |
+| **Resolve errors** | [Troubleshooting](references/troubleshooting.md) - Error codes and solutions |
+| **Concurrent scenarios** | [Concurrent Scenarios](references/concurrent.md) - Multi-scenario design |
 
 ---
 
-## 📚 模块参考文档
+## 📚 Module Reference Documentation
 
-### 视频模块 (Video)
+### Video Modules
 
-| 模块 | 文档 | 主要功能 |
+| Module | Documentation | Main Features |
 |------|------|---------|
-| **VI** | [vi.md](references/vi.md) | 摄像头输入、ISP管道、DEV/PIPE/CHN架构 |
-| **VPSS** | [vpss.md](references/vpss.md) | 视频处理：缩放/旋转/裁剪/格式转换/拼接 |
-| **VENC** | [venc.md](references/venc.md) | H.264/H.265/JPEG/MJPEG编码 |
-| **VDEC** | [vdec.md](references/vdec.md) | JPEG/MJPEG/H.264解码 |
-| **VO** | [vo.md](references/vo.md) | LCD/HDMI显示输出 |
+| **VI** | [vi.md](references/vi.md) | Camera input, ISP pipeline, DEV/PIPE/CHN architecture |
+| **VPSS** | [vpss.md](references/vpss.md) | Video processing: scaling/rotation/cropping/format conversion/stitching |
+| **VENC** | [venc.md](references/venc.md) | H.264/H.265/JPEG/MJPEG encoding |
+| **VDEC** | [vdec.md](references/vdec.md) | JPEG/MJPEG/H.264 decoding |
+| **VO** | [vo.md](references/vo.md) | LCD/HDMI display output |
 
-### 音频模块 (Audio)
+### Audio Modules
 
-| 模块 | 文档 | 主要功能 |
+| Module | Documentation | Main Features |
 |------|------|---------|
-| **AI** | [audio.md - Audio Input](references/audio.md#audio-input-ai) | 音频采集、麦克风录音 |
-| **AO** | [audio.md - Audio Output](references/audio.md#audio-output-ao) | 音频播放、扬声器输出 |
-| **AENC** | [audio.md - Audio Encoder](references/audio.md#audio-encoding-aenc) | 音频编码（PCM/ADPCM/AAC） |
-| **ADEC** | [audio.md - Audio Decoder](references/audio.md#audio-decoding-adec) | 音频解码 |
-| **VQE** | [audio.md - Voice Quality Enhancement](references/audio.md#voice-quality-enhancement-vqe) | 回声消除、噪声抑制、自动增益 |
+| **AI** | [audio.md - Audio Input](references/audio.md#audio-input-ai) | Audio capture, microphone recording |
+| **AO** | [audio.md - Audio Output](references/audio.md#audio-output-ao) | Audio playback, speaker output |
+| **AENC** | [audio.md - Audio Encoder](references/audio.md#audio-encoding-aenc) | Audio encoding (PCM/ADPCM/AAC) |
+| **ADEC** | [audio.md - Audio Decoder](references/audio.md#audio-decoding-adec) | Audio decoding |
+| **VQE** | [audio.md - Voice Quality Enhancement](references/audio.md#voice-quality-enhancement-vqe) | Echo cancellation, noise suppression, auto gain |
 
-### 系统模块 (System)
+### System Modules
 
-| 模块 | 文档 | 主要功能 |
+| Module | Documentation | Main Features |
 |------|------|---------|
-| **SYS** | [sys.md](references/sys.md) | 系统控制、模块绑定、内存管理 |
-| **VB** | [vb.md](references/vb.md) | 视频缓冲池、Common/Private/User pools |
-| **RGN** | [rgn.md](references/rgn.md) | OSD叠加、图形绘制、隐私遮罩 |
-| **GDC** | [gdc.md](references/gdc.md) | 几何畸变校正、鱼眼校正、旋转 |
+| **SYS** | [sys.md](references/sys.md) | System control, module binding, memory management |
+| **VB** | [vb.md](references/vb.md) | Video buffer pool, Common/Private/User pools |
+| **RGN** | [rgn.md](references/rgn.md) | OSD overlay, graphics drawing, privacy masking |
+| **GDC** | [gdc.md](references/gdc.md) | Geometric distortion correction, fisheye correction, rotation |
 
-### 工具文档 (Utilities)
+### Utility Documentation
 
-| 文档 | 用途 |
+| Documentation | Purpose |
 |------|------|
-| [debug.md](references/debug.md) | /proc文件系统、日志控制、运行时监控 |
-| [troubleshooting.md](references/troubleshooting.md) | 错误代码、诊断流程、常见问题 |
+| [debug.md](references/debug.md) | /proc filesystem, log control, runtime monitoring |
+| [troubleshooting.md](references/troubleshooting.md) | Error codes, diagnostic procedures, common issues |
 
 ---
 
-## 🎯 场景指南
+## 🎯 Scenario Guides
 
-### 完整应用示例
+### Complete Application Examples
 
-| 场景 | 文档 | 描述 |
+| Scenario | Documentation | Description |
 |------|------|------|
-| 视频监控摄像头 | [scenarios.md - Scenario 1](references/scenarios.md#1-video-surveillance-camera) | VI→VPSS→VENC 完整流程 |
-| 智能门铃 | [scenarios.md - Scenario 2](references/scenarios.md#2-smart-doorbell) | 摄像头+显示+编码 |
-| 图像处理设备 | [scenarios.md - Scenario 3](references/scenarios.md#3-image-processing-device) | VI→VPSS→自定义处理 |
-| 视频会议设备 | [scenarios.md - Scenario 4](references/scenarios.md#4-video-conference-device) | 双向音视频通信 |
-| AI视觉相机 | [scenarios.md - Scenario 5](references/scenarios.md#5-ai-powered-security-camera) | TPU推理+结果绘制 |
-| 多通道NVR | [scenarios.md - Scenario 6](references/scenarios.md#6-multi-channel-nvr) | 多路视频录制 |
+| Video Surveillance Camera | [scenarios.md - Scenario 1](references/scenarios.md#1-video-surveillance-camera) | VI→VPSS→VENC complete workflow |
+| Smart Doorbell | [scenarios.md - Scenario 2](references/scenarios.md#2-smart-doorbell) | Camera + display + encoding |
+| Image Processing Device | [scenarios.md - Scenario 3](references/scenarios.md#3-image-processing-device) | VI→VPSS→custom processing |
+| Video Conference Device | [scenarios.md - Scenario 4](references/scenarios.md#4-video-conference-device) | Bidirectional audio/video communication |
+| AI Vision Camera | [scenarios.md - Scenario 5](references/scenarios.md#5-ai-powered-security-camera) | TPU inference + result drawing |
+| Multi-channel NVR | [scenarios.md - Scenario 6](references/scenarios.md#6-multi-channel-nvr) | Multi-channel video recording |
 
-### 并发场景
+### Concurrent Scenarios
 
-| 场景 | 文档 | 难度 |
+| Scenario | Documentation | Difficulty |
 |------|------|------|
-| Camera → VPSS (Online) | [concurrent.md - Scenario 1](references/concurrent.md#scenario-1-camera--vpss--savedisplay-online-mode) | ⭐ 基础 |
-| File → VENC (Offline) | [concurrent.md - Scenario 2](references/concurrent.md#scenario-2-file--vpss--venc--save-bitstream-offline-mode) | ⭐⭐ 中等 |
-| VPSS → TPU Inference | [concurrent.md - Scenario 3](references/concurrent.md#scenario-3-vpss--tpu-inference--draw--save) | ⭐⭐⭐ 高级 |
-| 完整并发示例 | [concurrent.md - Scenario 4](references/concurrent.md#scenario-4-complete-concurrent-example) | ⭐⭐⭐⭐ 专家 |
+| Camera → VPSS (Online) | [concurrent.md - Scenario 1](references/concurrent.md#scenario-1-camera--vpss--savedisplay-online-mode) | ⭐ Basic |
+| File → VENC (Offline) | [concurrent.md - Scenario 2](references/concurrent.md#scenario-2-file--vpss--venc--save-bitstream-offline-mode) | ⭐⭐ Intermediate |
+| VPSS → TPU Inference | [concurrent.md - Scenario 3](references/concurrent.md#scenario-3-vpss--tpu-inference--draw--save) | ⭐⭐⭐ Advanced |
+| Complete Concurrent Example | [concurrent.md - Scenario 4](references/concurrent.md#scenario-4-complete-concurrent-example) | ⭐⭐⭐⭐ Expert |
 
 ---
 
-## 🔍 故障排除
+## 🔍 Troubleshooting
 
-### 按问题类型查找
+### Find by Issue Type
 
-#### 初始化问题
-- [VB-SYS 初始化顺序](SKILL.md#important-rules) - 必须按顺序初始化
-- [VPSS 初始化顺序](references/vpss.md#quick-start) - EnableChn → StartGrp → Bind
-- [ERR_VPSS_NOBUF 错误](references/troubleshooting.md#err_vpss_nobuf-0xc006800e) - 缓冲区不足
+#### Initialization Issues
+- [VB-SYS Initialization Order](SKILL.md#important-rules) - Must initialize in sequence
+- [VPSS Initialization Order](references/vpss.md#quick-start) - EnableChn → StartGrp → Bind
+- [ERR_VPSS_NOBUF Error](references/troubleshooting.md#err_vpss_nobuf-0xc006800e) - Insufficient buffers
 
-#### 运行时问题
-- [绑定失败](references/troubleshooting.md#binding-issues) - 检查/proc/cvitek/sys
-- [帧丢失](references/troubleshooting.md#frame-drops) - 检查VB pool配置
-- [性能问题](references/vpss.md#performance-considerations) - VPSS性能优化
+#### Runtime Issues
+- [Binding Failure](references/troubleshooting.md#binding-issues) - Check /proc/cvitek/sys
+- [Frame Drops](references/troubleshooting.md#frame-drops) - Check VB pool configuration
+- [Performance Issues](references/vpss.md#performance-considerations) - VPSS performance optimization
 
-#### 内存问题
-- [VB Pool 耗尽](references/vb.md#troubleshooting) - 增加buffer数量
-- [VENC SendFrame 内存](references/venc.md#sendframe-memory-requirements) - 必须使用VB Pool
-- [ION 缓存一致性](SKILL.md#ion-cache-management) - FlushCache/InvalidateCache
+#### Memory Issues
+- [VB Pool Exhaustion](references/vb.md#troubleshooting) - Increase buffer count
+- [VENC SendFrame Memory](references/venc.md#sendframe-memory-requirements) - Must use VB Pool
+- [ION Cache Coherence](SKILL.md#ion-cache-management) - FlushCache/InvalidateCache
 
-### 调试工具
+### Debugging Tools
 
 ```bash
-# 检查模块绑定状态
+# Check module binding status
 cat /proc/cvitek/sys | grep -A 10 "BIND RELATION"
 
-# 检查VI状态
+# Check VI status
 cat /proc/cvitek/vi
 
-# 检查VPSS状态
+# Check VPSS status
 cat /proc/cvitek/vpss
 
-# 检查VB buffer使用
+# Check VB buffer usage
 cat /proc/cvitek/vb
 
-# 启用调试日志
+# Enable debug logs
 echo "VI=7" > /proc/cvitek/log
 echo "VPSS=7" > /proc/cvitek/log
 ```
 
 ---
 
-## 🛠️ 自动化工具
+## 🛠️ Automation Tools
 
-### 更新和维护
+### Update and Maintenance
 
-| 脚本 | 功能 | 使用方法 |
+| Script | Function | Usage |
 |------|------|---------|
-| **update_from_sdk.sh** | 从SDK更新API | `bash scripts/update_from_sdk.sh /path/to/sdk` |
-| **learn_from_usage.py** | 学习使用模式 | `python scripts/learn_from_usage.py --feedback-file log.txt` |
-| **validate_skill.sh** | 验证skill完整性 | `bash scripts/validate_skill.sh` |
+| **update_from_sdk.sh** | Update APIs from SDK | `bash scripts/update_from_sdk.sh /path/to/sdk` |
+| **learn_from_usage.py** | Learn usage patterns | `python scripts/learn_from_usage.py --feedback-file log.txt` |
+| **validate_skill.sh** | Validate skill integrity | `bash scripts/validate_skill.sh` |
 
-### 快速验证
+### Quick Validation
 
 ```bash
-# 验证skill完整性
+# Validate skill integrity
 bash scripts/validate_skill.sh
 
-# 预期输出
+# Expected output
 # Step 1: Checking required files...
 #   ✓ SKILL.md
 #   ✓ references/vi.md
@@ -160,151 +160,151 @@ bash scripts/validate_skill.sh
 
 ---
 
-## 📖 核心概念速查
+## 📖 Core Concepts Quick Reference
 
-### Online vs Offline 模式
+### Online vs Offline Mode
 
-| 模式 | API | 数据流 | 使用场景 |
+| Mode | API | Data Flow | Use Cases |
 |------|-----|--------|---------|
-| **Online** | `CVI_SYS_Bind()` | 自动（硬件管理） | 标准视频管道 |
-| **Offline** | `GetFrame/SendFrame()` | 手动（CPU参与） | 自定义处理 |
+| **Online** | `CVI_SYS_Bind()` | Automatic (hardware-managed) | Standard video pipeline |
+| **Offline** | `GetFrame/SendFrame()` | Manual (CPU-involved) | Custom processing |
 
-### VPSS 输入源约束
+### VPSS Input Source Constraints
 
-⚠️ **重要**: VPSS Group **不能**动态切换输入源
+⚠️ **Important**: VPSS Group **cannot** dynamically switch input sources
 
-- **Online Mode**: VI → VPSS (Bind) - 零拷贝
-- **Offline Mode**: File/内存 → VPSS (SendFrame) - 手动控制
-- **多场景**: 使用**独立的 VPSS Groups**
+- **Online Mode**: VI → VPSS (Bind) - Zero-copy
+- **Offline Mode**: File/Memory → VPSS (SendFrame) - Manual control
+- **Multi-scenario**: Use **separate VPSS Groups**
 
-详见: [VPSS Input Source Constraints](SKILL.md#vpss-input-source-constraints)
+See: [VPSS Input Source Constraints](SKILL.md#vpss-input-source-constraints)
 
-### VENC SendFrame 内存要求
+### VENC SendFrame Memory Requirements
 
-⚠️ **关键**: 必须使用 **VB Pool**，不能直接使用 ION 内存
+⚠️ **Critical**: Must use **VB Pool**, cannot use ION memory directly
 
 ```c
-// ✅ 正确
+// ✅ Correct
 VB_BLK blk = CVI_VB_GetBlock(VB_INVALID_POOLID, size);
 frame.u32PoolId = CVI_VB_Handle2PoolId(blk);
 
-// ❌ 错误
+// ❌ Incorrect
 CVI_SYS_IonAlloc(&paddr, &vaddr, ...);
-frame.u32PoolId = VB_INVALID_POOL_ID;  // 可能失败
+frame.u32PoolId = VB_INVALID_POOL_ID;  // May fail
 ```
 
-详见: [VENC SendFrame Memory Requirements](references/venc.md#sendframe-memory-requirements)
+See: [VENC SendFrame Memory Requirements](references/venc.md#sendframe-memory-requirements)
 
-### VB Pool 设计
+### VB Pool Design
 
-| Pool类型 | 用途 | 配置方式 |
+| Pool Type | Purpose | Configuration |
 |---------|------|---------|
-| **Common Pool** | 共享内存 | `VB_CONFIG_S.astCommPool[]` |
-| **Private Pool** | 模块专用 | `CVI_VB_CreatePool()` |
-| **EX Mode** | 用户管理 | `VB_POOL_CONFIG_EX_S` |
+| **Common Pool** | Shared memory | `VB_CONFIG_S.astCommPool[]` |
+| **Private Pool** | Module-specific | `CVI_VB_CreatePool()` |
+| **EX Mode** | User-managed | `VB_POOL_CONFIG_EX_S` |
 
-详见: [VB Module Reference](references/vb.md)
-
----
-
-## 🔄 版本信息
-
-### 当前版本: v2.1.0 (2026-01-18)
-
-**主要更新**:
-- ✅ 源码验证：所有API经过cvi_mpi验证
-- ✅ 关键修正：VENC SendFrame内存要求
-- ✅ 新增API：SendFrameEx、ION缓存管理、GDC高级功能
-- ✅ 并发场景：完整的多场景设计指南（含TPU推理）
-
-**平台支持**:
-- CV181X (SG2002) - 全功能支持
-- CV182X (SG2002) - 全功能支持
-- CV180X (SG2000) - 部分功能限制
-
-### 版本历史
-
-- [v2.1.0](CHANGELOG.md#210---2026-01-18) - 源码验证版本（当前）
-- [v2.0.0](CHANGELOG.md#200---2026-01-18) - 完整模块覆盖
-- [v1.1.0](CHANGELOG.md#110---2026-01-18) - 故障排除增强
-- [v1.0.0](CHANGELOG.md#100---2026-01-17) - 初始版本
+See: [VB Module Reference](references/vb.md)
 
 ---
 
-## 💡 使用技巧
+## 🔄 Version Information
 
-### 1. 按任务快速查找
+### Current Version: v2.1.0 (2026-01-18)
 
-**任务**: "我想从摄像头采集视频并编码为H.265"
+**Major Updates**:
+- ✅ Source verification: All APIs verified against cvi_mpi
+- ✅ Critical fix: VENC SendFrame memory requirements
+- ✅ New APIs: SendFrameEx, ION cache management, GDC advanced features
+- ✅ Concurrent scenarios: Complete multi-scenario design guide (including TPU inference)
 
-1. 查看 [VI Module](references/vi.md) 配置摄像头
-2. 查看 [VPSS Module](references/vpss.md) 处理视频
-3. 查看 [VENC Module](references/venc.md) 配置编码
-4. 使用 [SYS_Bind](references/sys.md) 连接模块
+**Platform Support**:
+- CV181X (SG2002) - Full feature support
+- CV182X (SG2002) - Full feature support
+- CV180X (SG2000) - Partial feature limitations
 
-### 2. 按错误快速查找
+### Version History
 
-**错误**: `ERR_VPSS_NOBUF (0xc006800e)`
-
-1. 查看 [Troubleshooting](references/troubleshooting.md#err_vpss_nobuf-0xc006800e)
-2. 检查 [VPSS GetChnFrame](references/vpss.md#offline-mode) 使用
-3. 验证 [VB Pool](references/vb.md) 配置
-
-### 3. 学习最佳实践
-
-- 从 [Common Scenarios](references/scenarios.md) 开始
-- 参考 [Concurrent Scenarios](references/concurrent.md) 学习高级用法
-- 查看 [Debug Guide](references/debug.md) 掌握调试技巧
+- [v2.1.0](CHANGELOG.md#210---2026-01-18) - Source verification version (current)
+- [v2.0.0](CHANGELOG.md#200---2026-01-18) - Complete module coverage
+- [v1.1.0](CHANGELOG.md#110---2026-01-18) - Enhanced troubleshooting
+- [v1.0.0](CHANGELOG.md#100---2026-01-17) - Initial version
 
 ---
 
-## 📞 获取帮助
+## 💡 Usage Tips
 
-### 文档内搜索
+### 1. Quick Find by Task
 
-使用关键字搜索文档：
+**Task**: "I want to capture video from camera and encode as H.265"
+
+1. Check [VI Module](references/vi.md) to configure camera
+2. Check [VPSS Module](references/vpss.md) to process video
+3. Check [VENC Module](references/venc.md) to configure encoding
+4. Use [SYS_Bind](references/sys.md) to connect modules
+
+### 2. Quick Find by Error
+
+**Error**: `ERR_VPSS_NOBUF (0xc006800e)`
+
+1. Check [Troubleshooting](references/troubleshooting.md#err_vpss_nobuf-0xc006800e)
+2. Check [VPSS GetChnFrame](references/vpss.md#offline-mode) usage
+3. Verify [VB Pool](references/vb.md) configuration
+
+### 3. Learn Best Practices
+
+- Start with [Common Scenarios](references/scenarios.md)
+- Reference [Concurrent Scenarios](references/concurrent.md) for advanced usage
+- Check [Debug Guide](references/debug.md) for debugging techniques
+
+---
+
+## 📞 Get Help
+
+### Search Within Documentation
+
+Use keywords to search documents:
 ```bash
-# 在当前目录搜索关键字
+# Search keywords in current directory
 grep -r "SendFrame" references/
 grep -r "Bind.*VPSS" SKILL.md
 ```
 
-### 官方资源
+### Official Resources
 
-- SDK头文件: `/cvi_mpi/include/`
-- 示例代码: `/cvi_mpi/sample/`
-- 官方文档: SDK PDF手册
+- SDK headers: `/cvi_mpi/include/`
+- Sample code: `/cvi_mpi/sample/`
+- Official documentation: SDK PDF manual
 
-### 反馈和贡献
+### Feedback and Contribution
 
-遇到问题或有改进建议？
-- 使用 `scripts/learn_from_usage.py` 提供反馈
-- 查看 [CHANGELOG.md](CHANGELOG.md) 了解更新历史
-
----
-
-## 🎓 推荐阅读路径
-
-### 初学者（第一次使用）
-1. [README.md](README.md) - 了解项目
-2. [SKILL.md - Overview](SKILL.md#overview) - 核心概念
-3. [SKILL.md - Quick Start](SKILL.md#quick-start) - 快速入门
-4. [scenarios.md - Scenario 1](references/scenarios.md#1-video-surveillance-camera) - 实践示例
-
-### 中级用户（熟悉基础）
-1. [concurrent.md - Multi-Scenario](references/concurrent.md) - 并发设计
-2. [venc.md - SendFrameEx](references/venc.md#sendframeex-advanced-mode) - 高级编码
-3. [vb.md - EX Mode](references/vb.md#vb-pool-ex-mode-usermanaged-blocks) - 内存优化
-4. [troubleshooting.md](references/troubleshooting.md) - 问题诊断
-
-### 高级用户（深度优化）
-1. [SKILL.md - Performance](SKILL.md#3-performance-optimization) - 性能调优
-2. [gdc.md - MESH Management](references/gdc.md#mesh-management-structures) - 高级校正
-3. [sys.md - VI/VPSS Working Modes](references/sys.md#vi-vpss-working-modes) - 底层配置
-4. [debug.md](references/debug.md) - 深度调试
+Encountered issues or have improvement suggestions?
+- Use `scripts/learn_from_usage.py` to provide feedback
+- Check [CHANGELOG.md](CHANGELOG.md) for update history
 
 ---
 
-**索引文档版本**: v2.1.0
-**最后更新**: 2026-01-18
-**维护**: CV181X-Media Skill Team
+## 🎓 Recommended Reading Paths
+
+### Beginners (First Time Users)
+1. [README.md](README.md) - Understand the project
+2. [SKILL.md - Overview](SKILL.md#overview) - Core concepts
+3. [SKILL.md - Quick Start](SKILL.md#quick-start) - Quick start guide
+4. [scenarios.md - Scenario 1](references/scenarios.md#1-video-surveillance-camera) - Practical example
+
+### Intermediate Users (Familiar with Basics)
+1. [concurrent.md - Multi-Scenario](references/concurrent.md) - Concurrent design
+2. [venc.md - SendFrameEx](references/venc.md#sendframeex-advanced-mode) - Advanced encoding
+3. [vb.md - EX Mode](references/vb.md#vb-pool-ex-mode-usermanaged-blocks) - Memory optimization
+4. [troubleshooting.md](references/troubleshooting.md) - Problem diagnosis
+
+### Advanced Users (Deep Optimization)
+1. [SKILL.md - Performance](SKILL.md#3-performance-optimization) - Performance tuning
+2. [gdc.md - MESH Management](references/gdc.md#mesh-management-structures) - Advanced correction
+3. [sys.md - VI/VPSS Working Modes](references/sys.md#vi-vpss-working-modes) - Low-level configuration
+4. [debug.md](references/debug.md) - Deep debugging
+
+---
+
+**Index Document Version**: v2.1.0
+**Last Updated**: 2026-01-18
+**Maintained by**: CV181X-Media Skill Team

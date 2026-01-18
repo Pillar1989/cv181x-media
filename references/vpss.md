@@ -4,16 +4,16 @@
 
 VPSS provides hardware-accelerated video post-processing with **10 major features**:
 
-1. **CROP (裁剪)** - Group-level and channel-level cropping
-2. **Scale (缩放)** - Up to 32x upscale, 1/32 downscale
+1. **CROP (Crop)** - Group-level and channel-level cropping
+2. **Scale (Scaling)** - Up to 32x upscale, 1/32 downscale
 3. **Pixel Format Conversion** - YUV420/YUV422/RGB/BGR, planar/packed
-4. **Mirror/Flip (镜像/翻转)** - Horizontal mirror, vertical flip, 180° rotation
+4. **Mirror/Flip** - Horizontal mirror, vertical flip, 180° rotation
 5. **Overlay/OverlayEx** - Video overlay regions
 6. **Fixed Angle Rotation** - 0°/90°/180°/270° via GDC
-7. **Stitch (拼接)** - Multi-channel image stitching
+7. **Stitch (Image Stitching)** - Multi-channel image stitching
 8. **LDC (Lens Distortion Correction)** - Lens distortion correction
 9. **Deep Learning Pre-processing** - Normalization for TPU
-10. **Proc Amp (色彩控制)** - Brightness, contrast, saturation, hue control
+10. **Proc Amp (Color Control)** - Brightness, contrast, saturation, hue control
 
 ### Group-Channel Architecture
 
@@ -91,7 +91,7 @@ VI/User → VPSS Grp → VPSS Chn → VENC/VO/User
 - `CVI_VPSS_SetChnYRatio()` - Set Y/C ratio for format conversion
 - `CVI_VPSS_GetRegionLuma()` - Calculate luma statistics for region
 
-### Mirror/Flip (镜像/翻转)
+### Mirror/Flip
 
 - `CVI_VPSS_SetChnMirror()` - Set horizontal/vertical mirror flip
 - `CVI_VPSS_GetChnMirror()` - Get mirror/flip setting
@@ -101,7 +101,7 @@ VI/User → VPSS Grp → VPSS Chn → VENC/VO/User
 - Mirror vertical (up-down flip)
 - Mirror both (equivalent to 180° rotation)
 
-### Overlay/OverlayEx (视频叠加)
+### Overlay/OverlayEx
 
 - `CVI_VPSS_SetOvlCrop()` - Set overlay crop region
 - `CVI_VPSS_GetOvlCrop()` - Get overlay crop settings
@@ -110,7 +110,7 @@ VI/User → VPSS Grp → VPSS Chn → VENC/VO/User
 - ARGB4444, ARGB1555, ARGB8888
 - 256 LUT, Font-based formats
 
-### Stitch (拼接)
+### Stitch
 
 - `CVI_VPSS_SetStitchAttr()` - Configure stitch attributes
 - `CVI_VPSS_GetStitchAttr()` - Get stitch settings
