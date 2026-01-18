@@ -2,9 +2,16 @@
 
 ## Overview
 
-VB (Video Buffer) module provides unified video memory management for all media modules (VI, VPSS, VENC, VO). It manages buffer pools for efficient frame allocation and zero-copy data transfer.
+VB (Video Buffer) module provides **8 major categories** of functionality:
 
-## Core Concepts
+1. **Unified Physical Memory Management** - Manage large physical memory for all media modules (VI/VPSS/VO/VDEC/VENC/GDC)
+2. **Common Buffer Pool Management** - Shared pools accessible by all modules
+3. **Dynamic Pool Management** - Create/destroy private pools at runtime
+4. **Block Allocation/Release** - Acquire and return buffer blocks
+5. **Pool Configuration Management** - Configure and initialize pool system
+6. **Address Translation** - Convert between physical/virtual addresses and handles
+7. **Memory Mapping** - Map physical memory to user space
+8. **User Block Management** - Support external user-defined blocks
 
 ### Buffer Pool Architecture
 
@@ -24,6 +31,18 @@ VB Pool (Common Pool or Private Pool)
 ```
 Allocate Pool → Get Block → Use Buffer → Release Block → Destroy Pool
 ```
+
+### VB Pool Types (VB_SOURCE_E)
+
+- **VB_SOURCE_COMMON** - Common pool, shared by all modules
+- **VB_SOURCE_MODULE** - Module-specific pool for dedicated use
+- **VB_SOURCE_PRIVATE** - Private pool for exclusive use
+- **VB_SOURCE_USER** - User-defined pool for custom memory management
+
+**Usage Guidelines**:
+- Use **COMMON** for most scenarios (shared memory efficiency)
+- Use **PRIVATE** when module needs guaranteed buffer availability
+- Use **USER** for importing external memory (e.g., from other processes)
 
 ## Essential APIs
 
@@ -45,9 +64,28 @@ Allocate Pool → Get Block → Use Buffer → Release Block → Destroy Pool
 ### Pool Management
 
 - `CVI_VB_CreatePool()` - Create private buffer pool
+- `CVI_VB_CreatePoolWithoutCompact()` - Create pool without memory compaction
 - `CVI_VB_DestroyPool()` - Destroy private pool
-- `CVI_VB_MmapPool()` - Map pool to user space
+- `CVI_VB_PrintPool()` - Print pool information for debugging
+
+### Address Translation
+
+- `CVI_VB_Handle2PhysAddr()` - Get physical address from block handle
+- `CVI_VB_PhysAddr2Handle()` - Get block handle from physical address
+- `CVI_VB_Handle2PoolId()` - Get pool ID from block handle
+- `CVI_VB_GetBlockVirAddr()` - Get virtual address from physical address
+
+### Memory Mapping
+
+- `CVI_VB_MmapPool()` - Map entire pool to user space
 - `CVI_VB_MunmapPool()` - Unmap pool from user space
+- `CVI_VB_GetBlockVirAddr()` - Get virtual address of specific block
+
+### User Block Management
+
+- `VB_USER_BLOCK_S` - Structure for user-defined external blocks
+- Supports importing external memory into VB system
+- User blocks must follow VB block alignment requirements
 
 ## Common Workflows
 
@@ -168,7 +206,48 @@ CVI_U32 aligned_height = ALIGN(height, 2);
 CVI_U32 blkSize = aligned_width * aligned_height * 3 / 2;  // YUV420
 ```
 
+### Buffer Size Calculation Helper
+
+SDK provides helper interfaces for calculating VB block sizes:
+
+- `COMMON_GetPicBufferConfig()` - Get data size for each component in linear format
+- `COMMON_GetPicBufferSize()` - Get block pool size for linear format
+
+**Example**:
+```c
+SIZE_S stSize;
+stSize.u32Width = 1920;
+stSize.u32Height = 1080;
+stSize.enPixelFormat = PIXEL_FORMAT_YUV_PLANAR_420;
+
+CVI_U32 blkSize = COMMON_GetPicBufferSize(&stSize, DATA_BITWIDTH_8, 0);
+```
+
 ### Buffer Count Guidelines
+
+**Calculation Rules**:
+
+When configuring buffer pools, account for these factors:
+
+1. **Per-channel buffers**: Each channel adds 2 buffers (ping-pong buffer)
+2. **VO exception**: VO uses `DisplayBufLen`, minimum 3 buffers
+3. **Depth setting**: If channel's `u32Depth` ≠ 0, add `u32Depth` buffers
+4. **LDC features**: Each LDC feature (lens correction, rotation) adds 1 memory block
+
+**Memory Strategies**:
+- **Ample memory**: Use maximum space for common video buffer pool
+- **Constrained memory**: Use multiple common pools of different sizes
+
+**VB Data Flow Example**:
+```
+1. VI gets buffer Ai from common pool A for sensor data
+2. VI completes capture, sends Ai to VPSS
+3. VPSS channel 0 and 1 get Aj and Ak from pool A
+4. VPSS completes processing, releases Ai to pool
+5. VPSS sends Aj to VENC, Ak to VO
+6. VENC completes encoding, releases Aj to pool
+7. VO completes display, releases Ak to pool
+```
 
 **Minimum buffer count per module**:
 - **VI**: 2-3 buffers (double/triple buffering)
@@ -211,9 +290,9 @@ Calculate minimum buffers needed:
 
 ### 4. Monitor Buffer Usage
 
-Check buffer status in `/proc/umap/vb`:
+Check buffer status in `/proc/cvitek/vb`:
 ```bash
-cat /proc/umap/vb
+cat /proc/cvitek/vb
 ```
 
 Output shows:
@@ -267,7 +346,7 @@ typedef struct _VB_POOL_CONFIG_S {
 - Always configure VB **before** system initialization
 - Buffer size must account for alignment requirements
 - Over-provisioning buffers wastes memory; under-provisioning causes frame drops
-- Use `/proc/umap/vb` to monitor buffer usage and tune configuration
+- Use `/proc/cvitek/vb` to monitor buffer usage and tune configuration
 
 ## Debugging
 
@@ -275,7 +354,7 @@ typedef struct _VB_POOL_CONFIG_S {
 
 ```bash
 # View all VB pools
-cat /proc/umap/vb
+cat /proc/cvitek/vb
 
 # Example output:
 # -----COMMON POOL INFORMATION------
