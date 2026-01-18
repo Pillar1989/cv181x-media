@@ -141,17 +141,80 @@ CVI_SYS_Bind(&vpss_chn1, &venc_chn1);
 
 ## VI/VPSS Working Modes
 
-### Online Mode
-- VI hardware directly feeds VPSS
-- **Advantages**: Low latency, zero memory copy
-- **Limitations**: Limited crop/rotation features
-- **Use case**: Real-time preview, low-latency streaming
+### Four VI-VPSS Working Modes
 
-### Offline Mode
-- VI outputs to memory, VPSS reads from memory
-- **Advantages**: Full crop/rotation support, flexible timing
-- **Limitations**: Higher latency, memory bandwidth usage
-- **Use case**: Complex processing, offline encoding
+VI PIPE can be configured in 4 different modes that determine how data flows between VI and VPSS:
+
+#### 1. VI_OFFLINE_VPSS_OFFLINE
+
+**Data Flow**:
+- **VI**: VI_CAP writes RAW to memory, VI_PROC reads from memory
+- **VPSS**: VI_PROC writes YUV to memory, VPSS reads from memory
+
+**Supported Features**:
+- ✅ Group clipping
+- ✅ Zoom
+- ✅ Channel clipping
+
+**Use Case**: Maximum flexibility, supports all features but has highest latency
+
+#### 2. VI_OFFLINE_VPSS_ONLINE
+
+**Data Flow**:
+- **VI**: VI_CAP writes RAW to memory, VI_PROC reads from memory
+- **VPSS**: VI_PROC directly sends data stream to VPSS (does NOT write YUV to memory)
+
+**Supported Features**:
+- ❌ Group clipping (NOT supported)
+- ✅ Zoom
+- ✅ Channel clipping
+
+**Use Case**: Lower latency than full offline, but sacrifices group clipping
+
+#### 3. VI_ONLINE_VPSS_OFFLINE
+
+**Data Flow**:
+- **VI**: VI_CAP directly sends data stream to VI_PROC (does NOT write RAW to memory)
+- **VPSS**: VI_PROC writes YUV to memory, VPSS reads from memory
+
+**Supported Features**:
+- ✅ Group clipping
+- ✅ Zoom
+- ✅ Channel clipping
+
+**Use Case**: Reduced memory bandwidth for RAW data, maintains most features
+
+#### 4. VI_ONLINE_VPSS_ONLINE
+
+**Data Flow**:
+- **VI**: VI_CAP directly sends data stream to VI_PROC
+- **VPSS**: VI_PROC directly sends data stream to VPSS
+
+**Supported Features**:
+- ❌ Group clipping (NOT supported)
+- ✅ Zoom
+- ✅ Channel clipping
+
+**Use Case**: Lowest latency, zero memory copy, but limited features
+
+### Important Limitations
+
+- **VPSS ONLINE mode**: Can only receive data from **maximum 2** front-end sensors
+- **PIPES marked "-"**: Cannot operate independently, must perform HDR together with previous PIPE
+- **Feature trade-off**: ONLINE modes sacrifice group clipping for lower latency
+
+### VPSS Working Modes
+
+**VPSS_MODE_E** - VPSS operating modes:
+
+- **VPSS_MODE_SINGLE** - Single mode (default, one input)
+- **VPSS_MODE_DUAL** - Dual mode (two inputs for stitching or PIP)
+- **VPSS_MODE_RGNEX** - RGN expansion mode
+
+**Configuration Requirements**:
+- Must be set **after** `CVI_SYS_Init()` and **before** creating any VPSS groups
+- Use `CVI_SYS_SetVPSSMode()` to configure
+- Use `CVI_SYS_GetVPSSMode()` to query current mode
 
 ## Memory Management Notes
 
@@ -180,7 +243,32 @@ CVI_SYS_Bind(&vpss_chn1, &venc_chn1);
 
 - Always call `CVI_SYS_Init()` before any media module operations
 - Always call `CVI_SYS_Exit()` when shutting down
-- Binding must be established AFTER modules are configured and started
+- **CRITICAL**: Binding must be established AFTER modules are configured and **started**
+  - For VI: after `CVI_VI_EnableChn()`
+  - For VPSS: after `CVI_VPSS_StartGrp()`
 - Unbinding must be done BEFORE modules are stopped
 - ION memory is for custom usage; most media modules use VB pools automatically
 - Use `CVI_SYS_TDMACopy()` for fast memory-to-memory copy instead of memcpy
+
+## Binding Parameter Rules (from official documentation)
+
+**When VPSS is the destination (receiver)**:
+```c
+stDestChn.enModId = CVI_ID_VPSS;
+stDestChn.s32DevId = VpssGrp;   // VPSS Group ID
+stDestChn.s32ChnId = 0;         // MUST be 0 (group receives, not channel)
+```
+
+**When VPSS is the source (sender)**:
+```c
+stSrcChn.enModId = CVI_ID_VPSS;
+stSrcChn.s32DevId = VpssGrp;    // VPSS Group ID
+stSrcChn.s32ChnId = VpssChn;    // Output channel ID
+```
+
+**Verify binding success**:
+```bash
+cat /proc/cvitek/sys | grep -A 10 "BIND RELATION"
+# Empty table = binding failed silently
+```
+
