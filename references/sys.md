@@ -10,16 +10,14 @@ SYS module provides system-level control for media processing:
 
 ## Essential APIs
 
-### System Initialization
+### 1. System Initialization and Cleanup
 
-- `CVI_SYS_Init()` - Initialize system (must call first)
-- `CVI_SYS_Exit()` - Cleanup system (call before exit)
-- `CVI_SYS_GetVersion()` - Get SDK version
-- `CVI_SYS_GetChipId()` - Get chip ID (CV1800/CV1810/CV1811/CV1812/CV1813, etc.)
+- `CVI_SYS_Init()` - Initialize MMF system (must call first)
+- `CVI_SYS_Exit()` - Cleanup MMF system (call before exit)
+- `CVI_SYS_IsInited()` - Check if system is initialized
+- **Note**: Must call `CVI_VB_Init()` **before** `CVI_SYS_Init()`
 
-### Module Binding
-
-Binding enables zero-copy data flow between modules without manual frame transfer.
+### 2. Module Binding Management
 
 - `CVI_SYS_Bind()` - Bind source module to destination module
 - `CVI_SYS_UnBind()` - Unbind modules
@@ -28,38 +26,73 @@ Binding enables zero-copy data flow between modules without manual frame transfe
 
 **Supported Binding Paths**:
 ```
-VI → VPSS → VENC → Network/File
-VI → VPSS → VO → Display
-VI → VENC (direct encoding without scaling)
-VI → VO (direct display)
-VPSS → VENC (offline encoding)
-VPSS → VO (offline display)
+Data Source      →  Data Receiver
+─────────────────────────────────
+VI               →  VPSS, VENC, VO
+VDEC             →  VPSS → VENC, VO
+Audio Input      →  AENC
+Audio Output     →  ADEC
 ```
 
-### Memory Management (ION)
+### 3. Working Mode Configuration
+
+- `CVI_SYS_SetVIVPSSMode()` - Set VI-VPSS working mode
+- `CVI_SYS_GetVIVPSSMode()` - Get VI-VPSS mode
+- `CVI_SYS_SetVPSSMode()` - Set VPSS working mode (SINGLE/DUAL/RGNEX)
+- `CVI_SYS_GetVPSSMode()` - Get VPSS mode
+- `CVI_SYS_SetVPSSModeEx()` - Set extended VPSS mode
+- `CVI_SYS_GetVPSSModeEx()` - Get extended VPSS mode
+
+### 4. VI Device Management
+
+- `CVI_SYS_VI_Open()` - Open VI device
+- `CVI_SYS_VI_Close()` - Close VI device
+
+### 5. ION Memory Management
 
 - `CVI_SYS_IonAlloc()` - Allocate ION memory (non-cached)
 - `CVI_SYS_IonAlloc_Cached()` - Allocate cached ION memory
 - `CVI_SYS_IonFree()` - Free ION memory
-- `CVI_SYS_Mmap()` - Map physical address to virtual address (non-cached)
+- `CVI_SYS_IonFlushCache()` - Flush cache to memory and invalidate
+- `CVI_SYS_IonInvalidateCache()` - Invalidate cache from memory
+- `CVI_SYS_IonGetFd()` - Get ION file descriptor
+
+### 6. Memory Mapping
+
+- `CVI_SYS_Mmap()` - Map physical address to virtual (non-cached)
 - `CVI_SYS_MmapCache()` - Map physical address (cached)
 - `CVI_SYS_Munmap()` - Unmap memory
-- `CVI_SYS_IonFlushCache()` - Flush cache to memory
-- `CVI_SYS_IonInvalidateCache()` - Invalidate cache from memory
 
-### DMA Operations
+### 7. TPU DMA Operations
 
-- `CVI_SYS_TDMACopy()` - 1D DMA copy
-- `CVI_SYS_TDMACopy2D()` - 2D DMA copy (with stride)
+- `CVI_SYS_TDMACopy()` - 1D DMA copy via TPU
+- `CVI_SYS_TDMACopy2D()` - 2D DMA copy with stride via TPU
 
-### VI/VPSS Mode Configuration
+### 8. System Information Query
 
-- `CVI_SYS_SetVIVPSSMode()` - Set VI-VPSS working mode
-  - **Online mode**: VI directly feeds VPSS (low latency, limited crop/rotate)
-  - **Offline mode**: VI outputs to memory, VPSS reads (higher latency, full features)
-- `CVI_SYS_GetVIVPSSMode()` - Get VI-VPSS mode
-- `CVI_SYS_SetVPSSMode()` - Set VPSS working mode
-- `CVI_SYS_GetVPSSMode()` - Get VPSS mode
+- `CVI_SYS_GetVersion()` - Get MMF version
+- `CVI_SYS_GetChipId()` - Get chip ID (CV1800/CV1810/CV1811/CV1812/CV1813, etc.)
+- `CVI_SYS_GetChipVersion()` - Get chip version
+- `CVI_SYS_GetModName()` - Get module name string
+- `CVI_SYS_GetPowerOnReason()` - Get power-on reason
+- `CVI_SYS_GetCurPTS()` - Get current timestamp
+
+### 9. Temperature Monitoring
+
+- `CVI_SYS_RegisterThermalCallback()` - Register thermal callback for temperature control
+- `CVI_SYS_StartThermalThread()` - Start temperature monitoring (not supported in dual-OS SDK)
+- `CVI_SYS_StopThermalThread()` - Stop temperature monitoring
+
+### 10. Debug Tracing
+
+- `CVI_SYS_TraceBegin()` - Begin debug tracing
+- `CVI_SYS_TraceEnd()` - End debug tracing
+- `CVI_SYS_TraceCounter()` - Record counter value during trace
+
+### 11. Dual-OS Communication (dual-OS SDK only)
+
+- `CVI_MSG_Init()` - Initialize dual-core message communication
+- `CVI_MSG_Deinit()` - Deinitialize dual-core communication
 
 ## Common Workflows
 
