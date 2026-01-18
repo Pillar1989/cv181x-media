@@ -368,14 +368,19 @@ CVI_SYS_Bind(&vi_chn, &venc_chn);   // VI → VENC (record)
 
 **Reference**: See [references/rgn.md](references/rgn.md) for region types, pixel formats, and dynamic updates.
 
-### 10. Geometric Distortion Correction (GDC) Operations
+### 10. Geometric Distortion Correction Subsystem (GDC) Operations
 
 **When to consult**: Lens distortion correction, fisheye dewarp, arbitrary rotation, perspective correction
 
+**GDC Architecture**:
+- Uses **JOB** structure to manage **TASK** operations
+- Executes geometric transformations via hardware acceleration
+
 **Key Operations**:
-- LDC (Lens Distortion Correction) for barrel/pincushion
+- LDC (Lens Distortion Correction) for barrel/pincushion distortion
 - Fisheye unwarp (convert fisheye to rectilinear)
 - Arbitrary angle rotation (not limited to 90°)
+- Perspective correction (trapezoid to rectangle)
 - Custom mesh transformation
 
 **Quick Start (LDC)**:
