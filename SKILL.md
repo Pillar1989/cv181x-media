@@ -1,13 +1,13 @@
 ---
 name: cv181x-media
-description: "Expert guidance for CV181X/CV182X multimedia API development on Sophgo platforms (SG200X series). Provides comprehensive knowledge of VI (Video Input), VPSS (Video Processing), VENC (Video Encoding), VO (Video Output), SYS (System Control), VB (Video Buffer Pool), RGN (Region/OSD), and GDC (Geometric Distortion Correction) modules. Use this skill when working with: (1) Video capture from camera sensors, (2) Video encoding (H.264/H.265/JPEG/MJPEG), (3) Video processing (scaling, rotation, cropping, format conversion), (4) Video display output, (5) Module binding and system integration, (6) On-screen display (OSD) and graphics overlay, (7) Lens distortion correction and fisheye dewarp, (8) Video buffer memory management, (9) Debugging multimedia applications, (10) Building multimedia applications (surveillance cameras, video conferencing, AI vision systems, etc.) on CV181X/CV182X platforms."
+description: "Expert guidance for CV181X/CV182X/CV180X multimedia API development on Sophgo platforms (SG200X series). Provides comprehensive knowledge of VI (Video Input), VPSS (Video Processing), VENC (Video Encoding), VDEC (Video Decoding), VO (Video Output), Audio (AI/AO/AENC/ADEC/VQE), SYS (System Control), VB (Video Buffer Pool), RGN (Region/OSD), and GDC (Geometric Distortion Correction) modules. Use this skill when working with: (1) Video capture from camera sensors via MIPI/LVDS/HISPI/SLVS/BT.1120/BT.656/BT.601, (2) Video encoding (H.264/H.265/JPEG/MJPEG) with ROI, GOP, frame skipping, (3) Video decoding (JPEG/MJPEG/H.264), (4) Video processing (scaling, rotation, cropping, format conversion, stitching), (5) Video display output (CV181X only), (6) On-screen display (OSD) and graphics overlay, (7) Audio capture, playback, encoding, decoding, voice enhancement, (8) Fisheye correction and lens distortion correction, (9) Module binding and system integration, (10) Video buffer memory management, (11) System monitoring (temperature, thermal callbacks), (12) Deep learning pre-processing and TPU integration, (13) Dual-OS communication, (14) Debugging multimedia applications, (15) Building multimedia applications (surveillance cameras, video conferencing, AI vision systems) on CV181X/CV182X/CV180X platforms."
 ---
 
-# CV181X/CV182X Multimedia API Expert
+# CV181X/CV182X/CV180X Multimedia API Expert
 
 ## Overview
 
-This skill provides expert guidance for developing multimedia applications on Sophgo CV181X/CV182X platforms (SG200X series) using the CVI MPI (Media Processing Interface) API. It covers video capture, processing, encoding, output, and system integration for embedded multimedia applications.
+This skill provides expert guidance for developing multimedia applications on Sophgo CV181X/CV182X/CV180X platforms (SG200X series) using the CVI MPI (Media Processing Interface) API. It covers video capture, processing, encoding, decoding, output, audio processing, and system integration for embedded multimedia applications.
 
 ## Core Capabilities
 
@@ -15,12 +15,22 @@ This skill provides expert guidance for developing multimedia applications on So
 
 When designing multimedia applications, choose the right combination of modules:
 
-**Primary Modules**:
-- **VI (Video Input)**: Camera sensor input, ISP pipeline
-- **VPSS (Video Processing)**: Scaling, cropping, rotation, format conversion
+**Video Modules**:
+- **VI (Video Input)**: Camera sensor input, ISP pipeline (DEV/ISP_FE/ISP_BE/CHN)
+- **VPSS (Video Processing)**: Scaling, cropping, rotation, format conversion, stitching
 - **VENC (Video Encoding)**: H.264/H.265/JPEG/MJPEG encoding
-- **VO (Video Output)**: LCD/HDMI display
-- **SYS (System Control)**: Module binding, memory management
+- **VDEC (Video Decoding)**: JPEG/MJPEG/H.264 decoding (CV181X only)
+- **VO (Video Output)**: LCD/HDMI display (CV181X only, CV180X not supported)
+
+**Audio Modules**:
+- **AI (Audio Input)**: Audio capture from microphone
+- **AO (Audio Output)**: Audio playback to speaker
+- **AENC (Audio Encoding)**: Audio encoding (PCM/ADPCM/AAC)
+- **ADEC (Audio Decoding)**: Audio decoding
+- **VQE (Voice Quality Enhancement)**: AEC, ANR, AGC for speech quality
+
+**System Modules**:
+- **SYS (System Control)**: Module binding, memory management, temperature monitoring
 - **VB (Video Buffer Pool)**: Unified video memory management
 - **RGN (Region Management)**: OSD, graphics overlay, privacy masking
 - **GDC (Geometric Distortion Correction)**: Lens correction, fisheye dewarp, rotation
