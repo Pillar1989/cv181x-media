@@ -526,6 +526,99 @@ Always check return values for robust applications.
 - `venc/` - Encoding examples
 - `region/` - RGN/OSD examples
 
+## Platform Details
+
+### Supported Pixel Formats (PIXEL_FORMAT_E)
+
+The system supports extensive pixel formats for various use cases:
+
+**RGB/BGR Formats**:
+- `PIXEL_FORMAT_RGB_888` / `PIXEL_FORMAT_BGR_888` - 24-bit RGB/BGR
+- `PIXEL_FORMAT_RGB_888_PLANAR` / `PIXEL_FORMAT_BGR_888_PLANAR` - Planar RGB/BGR
+
+**ARGB Formats** (with alpha channel):
+- `PIXEL_FORMAT_ARGB_1555` - 16-bit ARGB
+- `PIXEL_FORMAT_ARGB_4444` - 16-bit ARGB
+- `PIXEL_FORMAT_ARGB_8888` - 32-bit ARGB
+
+**Bayer Formats** (Sensor RAW):
+- `PIXEL_FORMAT_RGB_BAYER_8BPP` / `10BPP` / `12BPP` / `14BPP` / `16BPP`
+
+**YUV Planar Formats**:
+- `PIXEL_FORMAT_YUV_PLANAR_422` - YUV 4:2:2 planar
+- `PIXEL_FORMAT_YUV_PLANAR_420` - YUV 4:2:0 planar
+- `PIXEL_FORMAT_YUV_PLANAR_444` - YUV 4:4:4 planar
+- `PIXEL_FORMAT_YUV_400` - Grayscale only
+
+**YUV Semi-Planar Formats**:
+- `PIXEL_FORMAT_NV12` / `PIXEL_FORMAT_NV21` - YUV 4:2:0 semi-planar
+- `PIXEL_FORMAT_NV16` / `PIXEL_FORMAT_NV61` - YUV 4:2:2 semi-planar
+
+**YUV Packed Formats**:
+- `PIXEL_FORMAT_YUYV` / `PIXEL_FORMAT_UYVY` / `PIXEL_FORMAT_YVYU` / `PIXEL_FORMAT_VYUY` - Packed YUV
+
+**HSV Format**:
+- `PIXEL_FORMAT_HSV_888` / `PIXEL_FORMAT_HSV_888_PLANAR`
+
+**Deep Learning Formats** (for TPU):
+- `PIXEL_FORMAT_FP32_C1` / `C3_PLANAR` - 32-bit float
+- `PIXEL_FORMAT_INT32_C1` / `C3_PLANAR` - 32-bit integer
+- `PIXEL_FORMAT_UINT32_C1` / `C3_PLANAR` - 32-bit unsigned
+- `PIXEL_FORMAT_BF16_C1` / `C3_PLANAR` - 16-bit float
+- `PIXEL_FORMAT_INT16_C1` / `C3_PLANAR` - 16-bit integer
+- `PIXEL_FORMAT_UINT16_C1` / `C3_PLANAR` - 16-bit unsigned
+- `PIXEL_FORMAT_INT8_C1` / `C3_PLANAR` - 8-bit integer
+- `PIXEL_FORMAT_UINT8_C1` / `C3_PLANAR` - 8-bit unsigned
+
+### Alignment Requirements
+
+When processing data from memory, different processor modules have specific alignment requirements.
+
+**Alignment Definition**:
+- Alignment is the amount of data read/written per row in image processing (must be row-aligned multiple)
+- Example: YUV420 PLANAR format at 720x480
+  - Y plane: `ALIGN(720, 32) × 480 = 736 × 480`
+  - U/V planes: `ALIGN(360, 32) × 240 = 384 × 240`
+
+**CV181X/CV180X Alignment**:
+- VI: Module-specific alignment
+- VPSS: Module-specific alignment
+- VO: Module-specific alignment
+
+Alignment can be modified via APIs like `CVI_VPSS_SetChnAlign`, but cannot go below hardware limits.
+
+**Calculation Example**:
+```c
+#define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
+
+CVI_U32 width = 1920;
+CVI_U32 height = 1080;
+CVI_U32 aligned_width = ALIGN(width, 32);  // 1920 (already aligned)
+CVI_U32 stride = aligned_width;  // Stride for memory allocation
+```
+
+### Platform Differences (CV181X vs CV180X)
+
+| Feature | CV181X | CV180X |
+|---------|--------|--------|
+| **VI Max Resolution** | 5M (2880×1620) @ 30fps | 4M (2560×1440) @ 30fps |
+| **HDR/WDR Support** | ✅ Yes | ❌ No |
+| **VO Module** | ✅ Supported | ❌ Not supported |
+| **VDEC H.264** | ✅ Supported | ❌ Not supported |
+| **VDEC JPEG/MJPEG** | ✅ Supported | ✅ Supported |
+| **VPSS Channels (single input)** | 4 groups | 3 groups |
+| **VPSS Channels (dual input)** | 1+3 groups | 1+2 groups |
+| **VPSS ONLINE Mode** | ✅ Supported | ✅ Supported |
+| **Temperature Monitoring** | ✅ Supported | ✅ Supported |
+| **Dual-OS Communication** | ✅ Supported | ✅ Supported |
+| **Audio Modules** | ✅ Full support | ✅ Full support |
+| **VI/VPSS/VENC** | ✅ Supported | ✅ Supported |
+
+**Key Takeaways**:
+- CV180X is a lower-cost variant without VO, H.264 decoding, or HDR support
+- Both platforms support the core video pipeline (VI → VPSS → VENC)
+- Choose platform based on feature requirements (display, decoding, HDR)
+
 ## Notes
 
 ### CRITICAL: Initialization Order
