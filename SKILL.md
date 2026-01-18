@@ -528,7 +528,32 @@ Always check return values for robust applications.
 
 ## Notes
 
-- **Initialization order**: `CVI_VB_SetConfig()` → `CVI_VB_Init()` → `CVI_SYS_Init()` → Modules
+### CRITICAL: Initialization Order
+
+**MMF System Depends on Buffer Pools**
+
+The MMF system's normal operation depends on buffer pools. **Incorrect order causes runtime errors**.
+
+**Correct Initialization Sequence**:
+```c
+1. CVI_VB_SetConfig(pstVbConfig)  // Set VB configuration
+2. CVI_VB_Init()                   // Initialize VB (allocates pools)
+3. CVI_SYS_Init()                  // Initialize MMF system
+```
+
+**Correct Deinitialization Sequence**:
+```c
+1. CVI_SYS_Exit()                  // Deinitialize MMF system
+2. CVI_VB_Exit()                   // Deinitialize VB (frees pools)
+```
+
+**⚠️ WARNING**:
+- **MUST** call `CVI_VB_Init()` **before** `CVI_SYS_Init()`
+- Failure to follow this order will cause abnormal operation
+- This is a hard requirement, not a guideline
+
+### Module-Specific Notes
+
 - **VPSS order**: `CreateGrp` → `ResetGrp` → `SetChnAttr` → `EnableChn` → `StartGrp` → `Bind`
 - **Binding timing**: Must be AFTER both source and destination modules are started
 - Always check VB pool configuration before system init
