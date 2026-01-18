@@ -1,6 +1,6 @@
 ---
 name: cv181x-media
-description: "Expert guidance for CV181X/CV182X/CV180X multimedia API development on Sophgo platforms (SG200X series). Provides comprehensive knowledge of VI (Video Input), VPSS (Video Processing), VENC (Video Encoding), VDEC (Video Decoding), VO (Video Output), Audio (AI/AO/AENC/ADEC/VQE), SYS (System Control), VB (Video Buffer Pool), RGN (Region/OSD), and GDC (Geometric Distortion Correction) modules. Use this skill when working with: (1) Video capture from camera sensors via MIPI/LVDS/HISPI/SLVS/BT.1120/BT.656/BT.601, (2) Video encoding (H.264/H.265/JPEG/MJPEG) with ROI, GOP, frame skipping, (3) Video decoding (JPEG/MJPEG/H.264), (4) Video processing (scaling, rotation, cropping, format conversion, stitching), (5) Video display output (CV181X only), (6) On-screen display (OSD) and graphics overlay, (7) Audio capture, playback, encoding, decoding, voice enhancement, (8) Fisheye correction and lens distortion correction, (9) Module binding and system integration, (10) Video buffer memory management, (11) System monitoring (temperature, thermal callbacks), (12) Deep learning pre-processing and TPU integration, (13) Dual-OS communication, (14) Debugging multimedia applications, (15) Building multimedia applications (surveillance cameras, video conferencing, AI vision systems) on CV181X/CV182X/CV180X platforms."
+description: "Expert guidance for CV181X/CV182X/CV180X multimedia API development on Sophgo platforms (SG200X series). Provides comprehensive knowledge of VI (Video Input), VPSS (Video Processing), VENC (Video Encoding), VDEC (Video Decoding), VO (Video Output), Audio (AI/AO/AENC/ADEC/VQE), SYS (System Control), VB (Video Buffer Pool), REGION (Regional Management/OSD), and GDC (Geometric Distortion Correction Subsystem) modules. Use this skill when working with: (1) Video capture from camera sensors via MIPI/LVDS/HISPI/SLVS/BT.1120/BT.656/BT.601, (2) Video encoding (H.264/H.265/JPEG/MJPEG) with ROI, GOP, frame skipping, (3) Video decoding (JPEG/MJPEG/H.264), (4) Video processing (scaling, rotation, cropping, format conversion, stitching), (5) Video display output (CV181X only), (6) On-screen display (OSD) and graphics overlay, (7) Audio capture, playback, encoding, decoding, voice enhancement, (8) Fisheye correction and lens distortion correction, (9) Module binding and system integration, (10) Video buffer memory management, (11) System monitoring (temperature, thermal callbacks), (12) Deep learning pre-processing and TPU integration, (13) Dual-OS communication, (14) Debugging multimedia applications, (15) Building multimedia applications (surveillance cameras, video conferencing, AI vision systems) on CV181X/CV182X/CV180X platforms."
 ---
 
 # CV181X/CV182X/CV180X Multimedia API Expert
@@ -32,8 +32,8 @@ When designing multimedia applications, choose the right combination of modules:
 **System Modules**:
 - **SYS (System Control)**: Module binding, memory management, temperature monitoring
 - **VB (Video Buffer Pool)**: Unified video memory management
-- **RGN (Region Management)**: OSD, graphics overlay, privacy masking
-- **GDC (Geometric Distortion Correction)**: Lens correction, fisheye dewarp, rotation
+- **REGION (Regional Management)**: OSD, graphics overlay, privacy masking (RGN is abbreviation)
+- **GDC (Geometric Distortion Correction Subsystem)**: Lens correction, fisheye dewarp, rotation
 
 **Decision Framework**:
 
@@ -336,9 +336,15 @@ CVI_SYS_Bind(&vi_chn, &venc_chn);   // VI → VENC (record)
 
 **Reference**: See [references/vb.md](references/vb.md) for pool configuration, buffer calculation, and optimization.
 
-### 9. Region Management (RGN) Operations
+### 9. Region Management (REGION/RGN) Operations
 
 **When to consult**: OSD (timestamps, labels), privacy masking, bounding boxes, graphics overlay
+
+**REGION Types**:
+- **OVERLAY** - Bitmap graphics with transparency (ARGB formats)
+- **COVER** - Solid privacy masks
+- **LINE** - Detection boxes, tracking
+- **MOSAIC** - Privacy blur
 
 **Key Operations**:
 - Create OVERLAY regions (bitmap graphics with transparency)
