@@ -127,15 +127,17 @@ CVI_SYS_Init()
 - Format conversion (YUV420/YUV422/RGB)
 - Image enhancement (brightness, contrast, saturation, hue)
 
-**Quick Start**:
+**Quick Start** (order is CRITICAL - from official SDK sample):
 ```
 1. CVI_VPSS_CreateGrp() - Create VPSS group
-2. CVI_VPSS_SetGrpAttr() - Set input size and format
+2. CVI_VPSS_ResetGrp() - Reset group (REQUIRED!)
 3. CVI_VPSS_SetChnAttr() - Set output size and format (per channel)
-4. CVI_VPSS_StartGrp() - Start group
-5. CVI_VPSS_EnableChn() - Enable channels
-6. CVI_SYS_Bind() - Bind from VI and to VENC/VO
+4. CVI_VPSS_EnableChn() - Enable channels FIRST
+5. CVI_VPSS_StartGrp() - Start group AFTER enable
+6. CVI_SYS_Bind() - Bind LAST (after both VI and VPSS are started)
 ```
+
+**CRITICAL**: The order EnableChn → StartGrp → Bind is mandatory. Binding before StartGrp will silently fail.
 
 **Multi-Resolution Example**:
 ```c
@@ -218,19 +220,77 @@ SetChnAttr(VpssGrp, 2, 640, 360);      // Chn2: 360p (mobile stream)
 
 **Module Binding Pattern**:
 ```c
-// Define source and destination
-MMF_CHN_S stSrcChn = {.enModId = CVI_ID_VI, .s32DevId = 0, .s32ChnId = 0};
-MMF_CHN_S stDestChn = {.enModId = CVI_ID_VPSS, .s32DevId = 0, .s32ChnId = 0};
+// Define source (VI channel)
+MMF_CHN_S stSrcChn = {.enModId = CVI_ID_VI, .s32DevId = ViPipe, .s32ChnId = ViChn};
 
-// Bind modules (must be done AFTER modules are configured and started)
+// Define destination (VPSS group)
+// IMPORTANT: For VPSS as destination, s32ChnId MUST be 0 (per official documentation)
+MMF_CHN_S stDestChn = {.enModId = CVI_ID_VPSS, .s32DevId = VpssGrp, .s32ChnId = 0};
+
+// Bind modules (MUST be done AFTER modules are configured and started)
+// CRITICAL: Both VI (EnableChn) and VPSS (StartGrp) must be complete before binding
 CVI_SYS_Bind(&stSrcChn, &stDestChn);
 
 // Data flows automatically from VI to VPSS
+// Verify binding: cat /proc/cvitek/sys | grep -A 10 "BIND RELATION"
 // ...
 
 // Cleanup: Unbind BEFORE stopping modules
 CVI_SYS_UnBind(&stSrcChn, &stDestChn);
 ```
+
+**System Binding Mechanism**:
+
+The SDK provides system binding interfaces to establish relationships between data sources and receivers:
+
+- **After binding**: Data from source automatically flows to destination (zero-copy)
+- **One-to-many**: A single source can bind to multiple destinations
+- **Automatic return**: If source is unbound, data automatically returns to VB pool
+- **Hardware-managed**: Zero-copy data transfer managed by hardware
+
+**Complete Binding Table**:
+
+| Data Source      | Valid Data Receivers                            |
+|------------------|-------------------------------------------------|
+| **VI**           | VPSS, VENC, VO                                  |
+| **VDEC**         | VPSS → (VENC, VO)                               |
+| **Audio Input**  | AENC                                            |
+| **Audio Output** | ADEC → Audio Output                             |
+
+**Key Binding Patterns**:
+```
+VI              →  VPSS
+                    →  VENC
+                    →  VO
+
+VDEC            →  VPSS
+                    →  VENC
+                    →  VO
+
+Audio Input     →  AENC
+
+Audio Output    →  ADEC
+                    →  Audio Output
+```
+
+**One-to-Many Binding Example**:
+```c
+// One VI source feeding multiple outputs
+MMF_CHN_S vi_chn = {CVI_ID_VI, 0, 0};
+MMF_CHN_S vpss_chn = {CVI_ID_VPSS, 0, 0};
+MMF_CHN_S venc_chn = {CVI_ID_VENC, 0, 0};
+MMF_CHN_S vo_chn = {CVI_ID_VO, 0, 0};
+
+// Bind VI to both VPSS and VENC
+CVI_SYS_Bind(&vi_chn, &vpss_chn);   // VI → VPSS → VO (display)
+CVI_SYS_Bind(&vi_chn, &venc_chn);   // VI → VENC (record)
+```
+
+**Binding Rules (from official documentation)**:
+- When VPSS is the **receiver**, set `s32ChnId = 0` (group receives, not channel)
+- When VPSS is the **sender**, set `s32ChnId = VpssChn` (output channel)
+- Binding must occur AFTER both source and destination modules are started
+- An empty binding table in `/proc/cvitek/sys` indicates binding failed
 
 **Important Rules**:
 - Always call `CVI_SYS_Init()` first
@@ -256,7 +316,7 @@ CVI_SYS_UnBind(&stSrcChn, &stDestChn);
 2. CVI_VB_Init() - Initialize and allocate pools
 3. CVI_SYS_Init() - Initialize system (uses VB pools)
 4. Modules automatically use VB pools
-5. Monitor: cat /proc/umap/vb
+5. Monitor: cat /proc/cvitek/vb
 ```
 
 **Buffer Size Calculation**:
@@ -319,32 +379,40 @@ CVI_SYS_UnBind(&stSrcChn, &stDestChn);
 
 ### 11. Debugging and Troubleshooting
 
-**When to consult**: No video output, frame drops, memory errors, performance issues
+**When to consult**: No video output, frame drops, memory errors, performance issues, ERR_VPSS_NOBUF
 
 **Key Tools**:
-- `/proc/umap/*` - Module runtime status (vi, vpss, venc, vo, vb, rgn, gdc)
+- `/proc/cvitek/*` - Module runtime status (vi, vpss, venc, vo, vb, rgn, gdc, sys)
 - `/proc/cvitek/log` - Log level control
 - `dmesg` - Kernel driver logs
 - `CVI_*_QueryStatus()` - Module status APIs
 
-**Common Issues**:
+**Quick Diagnostics**:
 ```bash
-# No video / Frame drops
-cat /proc/umap/vi        # Check FrameCount, LostFrames
-cat /proc/umap/vb        # Check Free buffers
+# Check binding status (FIRST thing to check for NOBUF errors)
+cat /proc/cvitek/sys | grep -A 10 "BIND RELATION"
 
-# Bitrate issues
-cat /proc/umap/venc      # Check current bitrate, StreamBufUsage
+# Check VI is outputting frames
+cat /proc/cvitek/vi
 
-# OSD not visible
-cat /proc/umap/rgn       # Check region attachment
+# Check VPSS is receiving/sending
+cat /proc/cvitek/vpss
+
+# Check VB buffer availability
+cat /proc/cvitek/vb
 
 # Enable debug logs
 echo "VI=7" > /proc/cvitek/log
 echo "VPSS=7" > /proc/cvitek/log
 ```
 
-**Reference**: See [references/debug.md](references/debug.md) for comprehensive debugging guide and troubleshooting checklist.
+**Common Error: ERR_VPSS_NOBUF (0xc006800e)**:
+1. Check binding table (empty = bind failed)
+2. Check VPSS RecvCnt (0 = not receiving from VI)
+3. Check VB Free buffers (0 = pool exhausted)
+4. Ensure correct init order: EnableChn → StartGrp → Bind
+
+**Reference**: See [references/troubleshooting.md](references/troubleshooting.md) for complete diagnostic procedures, error code reference, and recovery steps.
 
 ## Common Tasks
 
@@ -395,6 +463,7 @@ Load these references when working with specific modules:
 - **[references/rgn.md](references/rgn.md)** - Region Management: OSD overlay, privacy masking, LINE/COVER/MOSAIC types
 - **[references/gdc.md](references/gdc.md)** - Geometric Distortion Correction: LDC, fisheye dewarp, rotation, mesh transformation
 - **[references/debug.md](references/debug.md)** - Debugging Guide: /proc filesystem, log system, troubleshooting checklist
+- **[references/troubleshooting.md](references/troubleshooting.md)** - Troubleshooting: Error codes, diagnostic decision trees, initialization sequence, common pitfalls
 - **[references/scenarios.md](references/scenarios.md)** - Common Scenarios: 6 real-world application examples with complete pipelines
 
 ## Key Principles
@@ -460,12 +529,15 @@ Always check return values for robust applications.
 ## Notes
 
 - **Initialization order**: `CVI_VB_SetConfig()` → `CVI_VB_Init()` → `CVI_SYS_Init()` → Modules
+- **VPSS order**: `CreateGrp` → `ResetGrp` → `SetChnAttr` → `EnableChn` → `StartGrp` → `Bind`
+- **Binding timing**: Must be AFTER both source and destination modules are started
 - Always check VB pool configuration before system init
 - Configure modules BEFORE binding
 - Unbind modules BEFORE destroying
 - Release frames after GetFrame operations
 - Always check return values for error handling
-- Use `/proc/umap/*` to monitor runtime status
+- Use `/proc/cvitek/*` to monitor runtime status
+- **Binding verification**: Check `/proc/cvitek/sys` for binding table
 - Maximum VI channels: 4 per pipe
 - Maximum VPSS channels: 4 per group
 - Maximum RGN layers: Platform-dependent (typically 4-8)
