@@ -279,10 +279,13 @@ SYS provides unified management for 39 module types:
 **Video Modules**:
 - **VI** (Video Input) - Camera sensor capture, ISP pipeline
 - **VPSS** (Video Process Sub-System) - Video post-processing
+- **VPSSF** (VPSS Frontend) - VPSS frontend module
 - **VDEC** (Video Decoder) - JPEG/MJPEG/H.264 decoding
 - **VENC** (Video Encoder) - H.264/H.265/JPEG/MJPEG encoding
 - **H264E** (H.264 Encoder) - H.264 encoding
+- **H264D** (H.264 Decoder) - H.264 decoding
 - **H265E** (H.265 Encoder) - H.265 encoding
+- **H265D** (H.265 Decoder) - H.265 decoding
 - **JPEGE** (JPEG Encoder) - JPEG/MJPEG encoding
 - **JPEGD** (JPEG Decoder) - JPEG/MJPEG decoding
 - **VO** (Video Output) - Display output (CV181X only, CV180X not supported)
@@ -306,6 +309,7 @@ SYS provides unified management for 39 module types:
 - **SYS** (System) - System control and initialization
 - **RGN** (Region) - OSD/Region management (also called REGION)
 - **VPU** (Video Process Unit) - Video processing unit
+- **TPU** (Tensor Processing Unit) - AI inference acceleration
 - **LOG** (Log) - Logging system
 - **IVE** (Intelligent Video Engine) - Intelligent video analysis
 

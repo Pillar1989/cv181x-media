@@ -6,7 +6,7 @@ CV181X/CV182X platforms provide multiple debugging mechanisms through the `/proc
 
 ## Proc Filesystem
 
-The `/proc` filesystem provides runtime status and statistics for all media modules.
+The `/proc/cvitek/` filesystem provides runtime status and statistics for all media modules.
 
 ### System-Wide Information
 
@@ -15,12 +15,20 @@ The `/proc` filesystem provides runtime status and statistics for all media modu
 ```bash
 # List all CVI MPI proc entries
 ls /proc/cvitek/
-ls /proc/umap/
 ```
 
-Common directories:
-- `/proc/cvitek/` - General system info
-- `/proc/umap/` - Media module runtime info
+Common entries:
+- `vi` - Video Input status
+- `vpss` - Video Processing status
+- `venc` - Video Encoding status
+- `vdec` - Video Decoding status
+- `vo` - Video Output status
+- `vb` - Video Buffer Pool status
+- `rgn` - Region (OSD) status
+- `gdc` - Geometric Distortion Correction status
+- `sys` - System information
+- `isp` - ISP status
+- `log` - Log level control
 
 #### 2. System Version and Chip Info
 
@@ -38,7 +46,7 @@ cat /proc/cvitek/chipinfo
 
 ```bash
 # View VI status
-cat /proc/umap/vi
+cat /proc/cvitek/vi
 
 # Output shows:
 # - Device status (enabled/disabled)
@@ -67,7 +75,7 @@ cat /proc/umap/vi
 
 ```bash
 # View VPSS status
-cat /proc/umap/vpss
+cat /proc/cvitek/vpss
 
 # Output shows:
 # - Group status (input resolution, state)
@@ -76,14 +84,14 @@ cat /proc/umap/vpss
 ```
 
 **Troubleshooting**:
-- High `LostFrames` → Increase VB buffer count
+- High `LostCnt` → Increase VB buffer count
 - Low frame rate → Check binding or buffer allocation
 
 #### VENC (Video Encoding)
 
 ```bash
 # View VENC status
-cat /proc/umap/venc
+cat /proc/cvitek/venc
 
 # Output shows:
 # - Channel status (codec type, resolution)
@@ -102,7 +110,7 @@ cat /proc/umap/venc
 
 ```bash
 # View VO status
-cat /proc/umap/vo
+cat /proc/cvitek/vo
 
 # Output shows:
 # - Device status (interface type, resolution)
@@ -114,7 +122,7 @@ cat /proc/umap/vo
 
 ```bash
 # View VB pool status
-cat /proc/umap/vb
+cat /proc/cvitek/vb
 
 # Output shows:
 # -----COMMON POOL INFORMATION------
@@ -135,7 +143,7 @@ cat /proc/umap/vb
 
 ```bash
 # View RGN status
-cat /proc/umap/rgn
+cat /proc/cvitek/rgn
 
 # Output shows:
 # - Region handles
@@ -147,7 +155,7 @@ cat /proc/umap/rgn
 
 ```bash
 # View GDC status
-cat /proc/umap/gdc
+cat /proc/cvitek/gdc
 
 # Output shows:
 # - Job status
@@ -278,7 +286,7 @@ CVI_VI_DumpHwRegisterToFile(ViPipe, "/tmp/vi_regs.txt");
 **Debug steps**:
 ```bash
 # 1. Check if VI is capturing
-cat /proc/umap/vi
+cat /proc/cvitek/vi
 # Look for FrameCount incrementing
 
 # 2. Check bindings
@@ -286,7 +294,7 @@ cat /proc/cvitek/sys_bind
 # Verify VI → VPSS → VENC/VO bindings
 
 # 3. Check buffer availability
-cat /proc/umap/vb
+cat /proc/cvitek/vb
 # Ensure Free > 0 for all pools
 
 # 4. Check kernel logs
@@ -301,15 +309,15 @@ dmesg | tail -50
 
 ### 2. Frame Drops / Lost Frames
 
-**Symptoms**: `LostFrames` > 0 in `/proc/umap/vi` or `/proc/umap/vpss`
+**Symptoms**: `LostFrames` > 0 in `/proc/cvitek/vi` or `/proc/cvitek/vpss`
 
 **Debug steps**:
 ```bash
 # Check VB status
-cat /proc/umap/vb
+cat /proc/cvitek/vb
 
 # Monitor in real-time
-watch -n 1 "cat /proc/umap/vi | grep LostFrames"
+watch -n 1 "cat /proc/cvitek/vi | grep LostFrames"
 ```
 
 **Solutions**:
@@ -324,9 +332,9 @@ watch -n 1 "cat /proc/umap/vi | grep LostFrames"
 **Debug steps**:
 ```bash
 # Check each module's FPS
-cat /proc/umap/vi    # VI input FPS
-cat /proc/umap/vpss  # VPSS output FPS
-cat /proc/umap/venc  # VENC output FPS
+cat /proc/cvitek/vi    # VI input FPS
+cat /proc/cvitek/vpss  # VPSS output FPS
+cat /proc/cvitek/venc  # VENC output FPS
 ```
 
 **Common causes**:
@@ -341,7 +349,7 @@ cat /proc/umap/venc  # VENC output FPS
 **Debug steps**:
 ```bash
 # Check total VB usage
-cat /proc/umap/vb
+cat /proc/cvitek/vb
 
 # Check system memory
 free -m
@@ -362,10 +370,10 @@ cat /proc/ion
 **Debug steps**:
 ```bash
 # Monitor real-time bitrate
-watch -n 1 "cat /proc/umap/venc"
+watch -n 1 "cat /proc/cvitek/venc"
 
 # Check stream buffer usage
-cat /proc/umap/venc | grep StreamBuf
+cat /proc/cvitek/venc | grep StreamBuf
 ```
 
 **Solutions**:
@@ -380,7 +388,7 @@ cat /proc/umap/venc | grep StreamBuf
 **Debug steps**:
 ```bash
 # Check RGN status
-cat /proc/umap/rgn
+cat /proc/cvitek/rgn
 
 # Verify region is attached
 # Check bShow = true
@@ -453,7 +461,7 @@ valgrind --leak-check=full ./your_app
 
 1. **Always check return values**: Every CVI API returns status code
 2. **Enable debug logs during development**: Set log level to 7 for detailed info
-3. **Monitor VB pool usage**: Check `/proc/umap/vb` regularly
+3. **Monitor VB pool usage**: Check `/proc/cvitek/vb` regularly
 4. **Use QueryStatus APIs**: Poll status periodically to detect issues early
 5. **Check dmesg for driver errors**: Kernel logs reveal low-level issues
 6. **Test under load**: Run stress tests to expose buffer/timing issues
@@ -466,7 +474,7 @@ When encountering issues, follow this checklist:
 - [ ] Check API return values (non-zero = error)
 - [ ] Verify initialization order (VB → SYS → Modules)
 - [ ] Check module bindings (`/proc/cvitek/sys_bind`)
-- [ ] Verify VB pools have free buffers (`/proc/umap/vb`)
+- [ ] Verify VB pools have free buffers (`/proc/cvitek/vb`)
 - [ ] Check frame counts in module proc files (incrementing = working)
 - [ ] Review kernel logs for driver errors (`dmesg | grep -i cvi`)
 - [ ] Enable debug logs for problematic module
@@ -509,7 +517,7 @@ gdb ./your_app core
 When reporting issues to vendor support, provide:
 1. SDK version (`cat /proc/cvitek/version`)
 2. Chip info (`cat /proc/cvitek/chipinfo`)
-3. Relevant proc output (`/proc/umap/vi`, `/proc/umap/vb`, etc.)
+3. Relevant proc output (`/proc/cvitek/vi`, `/proc/cvitek/vb`, etc.)
 4. Kernel logs (`dmesg`)
 5. Application logs with debug level
 6. Hardware register dump (if requested)

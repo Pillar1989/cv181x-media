@@ -1,6 +1,7 @@
 ---
 name: cv181x-media
 description: "Expert guidance for CV181X/CV182X/CV180X multimedia API development on Sophgo platforms (SG200X series). Provides comprehensive knowledge of VI (Video Input), VPSS (Video Processing), VENC (Video Encoding), VDEC (Video Decoding), VO (Video Output), Audio (AI/AO/AENC/ADEC/VQE), SYS (System Control), VB (Video Buffer Pool), REGION (Regional Management/OSD), and GDC (Geometric Distortion Correction Subsystem) modules. Use this skill when working with: (1) Video capture from camera sensors via MIPI/LVDS/HISPI/SLVS/BT.1120/BT.656/BT.601, (2) Video encoding (H.264/H.265/JPEG/MJPEG) with ROI, GOP, frame skipping, (3) Video decoding (JPEG/MJPEG/H.264), (4) Video processing (scaling, rotation, cropping, format conversion, stitching), (5) Video display output (CV181X only), (6) On-screen display (OSD) and graphics overlay, (7) Audio capture, playback, encoding, decoding, voice enhancement, (8) Fisheye correction and lens distortion correction, (9) Module binding and system integration, (10) Video buffer memory management, (11) System monitoring (temperature, thermal callbacks), (12) Deep learning pre-processing and TPU integration, (13) Dual-OS communication, (14) Debugging multimedia applications, (15) Building multimedia applications (surveillance cameras, video conferencing, AI vision systems) on CV181X/CV182X/CV180X platforms."
+version: 2.1.0
 ---
 
 # CV181X/CV182X/CV180X Multimedia API Expert
@@ -159,6 +160,82 @@ SetChnAttr(VpssGrp, 0, 1920, 1080);    // Chn0: 1080p (main stream)
 SetChnAttr(VpssGrp, 1, 1280, 720);     // Chn1: 720p (sub stream)
 SetChnAttr(VpssGrp, 2, 640, 360);      // Chn2: 360p (mobile stream)
 ```
+
+### VPSS Input Source Constraints
+
+**CRITICAL**: VPSS Group does **NOT** support dynamic input source switching. A group can use only **one** input mode at a time.
+
+#### Two Input Modes (Mutually Exclusive)
+
+**1. Online Mode (Bind)**:
+```c
+// Automatic frame transfer from VI
+CVI_SYS_Bind(&vi_chn, &vpss_chn);
+```
+- Zero-copy, hardware-managed data flow
+- VI automatically pushes frames to VPSS
+- Lowest latency and CPU usage
+- **Cannot** use SendFrame on the same group
+
+**2. Offline Mode (SendFrame)**:
+```c
+// Manual frame submission
+VIDEO_FRAME_INFO_S frame;
+CVI_VPSS_SendFrame(grp, &frame, -1);
+```
+- User-controlled timing and source
+- Manual GetFrame/SendFrame operations
+- Higher flexibility (file, memory, network sources)
+- **Cannot** use Bind on the same group
+
+#### What You CANNOT Do
+
+❌ Switch from Bind → SendFrame without DestroyGrp
+❌ Switch from SendFrame → Bind without DestroyGrp
+❌ Use both modes simultaneously on the same group
+❌ Dynamically change input source after group starts
+
+#### Multi-Scenario Solution
+
+For applications requiring multiple input sources, use **separate VPSS Groups**:
+
+```c
+// Group 0: Camera (Online mode - Bind)
+VPSS_GRP grp_camera = 0;
+CVI_VPSS_CreateGrp(grp_camera, &grpAttr);
+CVI_VPSS_ResetGrp(grp_camera);
+CVI_VPSS_SetChnAttr(grp_camera, 0, &chn_attr_1080p);
+CVI_VPSS_EnableChn(grp_camera, 0);
+CVI_VPSS_StartGrp(grp_camera);
+
+MMF_CHN_S vi_chn = {CVI_ID_VI, 0, 0};
+MMF_CHN_S vpss_grp0 = {CVI_ID_VPSS, grp_camera, 0};
+CVI_SYS_Bind(&vi_chn, &vpss_grp0);  // Camera → VPSS Group 0
+
+// Group 1: File (Offline mode - SendFrame)
+VPSS_GRP grp_file = 1;
+CVI_VPSS_CreateGrp(grp_file, &grpAttr);
+CVI_VPSS_ResetGrp(grp_file);
+CVI_VPSS_SetChnAttr(grp_file, 0, &chn_attr_1080p);
+CVI_VPSS_EnableChn(grp_file, 0);
+CVI_VPSS_StartGrp(grp_file);
+// No Bind - will use SendFrame
+
+// Manual file input loop
+while (file_running) {
+    VB_BLK blk = CVI_VB_GetBlock(VB_INVALID_POOLID, size);
+    // ... load file data to VB block ...
+    VIDEO_FRAME_INFO_S frame = {
+        .stVFrame.u64PhyAddr[0] = CVI_VB_Handle2PhysAddr(blk),
+        .stVFrame.pu8VirAddr[0] = CVI_VB_GetBlockVirAddr(blk),
+        .u32PoolId = CVI_VB_Handle2PoolId(blk),
+    };
+    CVI_VPSS_SendFrame(grp_file, &frame, -1);
+    CVI_VB_ReleaseBlock(blk);
+}
+```
+
+**See also**: [VPSS Module Reference](references/vpss.md) for complete SendFrame workflow and [VB Module Reference](vb.md) for buffer management.
 
 **Reference**: See [references/vpss.md](references/vpss.md) for complete API list and performance considerations.
 
@@ -486,6 +563,7 @@ Load these references when working with specific modules:
 - **[references/debug.md](references/debug.md)** - Debugging Guide: /proc filesystem, log system, troubleshooting checklist
 - **[references/troubleshooting.md](references/troubleshooting.md)** - Troubleshooting: Error codes, diagnostic decision trees, initialization sequence, common pitfalls
 - **[references/scenarios.md](references/scenarios.md)** - Common Scenarios: 6 real-world application examples with complete pipelines
+- **[references/concurrent.md](references/concurrent.md)** - Concurrent Scenarios: Multi-scenario design with Camera→VPSS, File→VENC, and TPU inference workflows
 
 ## Key Principles
 
@@ -514,6 +592,46 @@ Load these references when working with specific modules:
 - Use `CVI_SYS_IonAlloc()` for custom buffers
 - Required for custom frame manipulation
 - Use non-cached for DMA, cached for CPU processing
+
+**ION Cache Management**:
+
+For cached ION memory, you must manage cache coherency between CPU and hardware:
+
+- `CVI_SYS_IonAlloc_Cached()` - Allocate cached ION memory (for CPU processing)
+- `CVI_SYS_IonFlushCache()` - Flush CPU cache to memory (before hardware access)
+- `CVI_SYS_IonInvalidateCache()` - Invalidate CPU cache from memory (after hardware access)
+- `CVI_SYS_IonGetFd()` - Get ION file descriptor (for DMA operations)
+
+**Cache Management Pattern**:
+
+```c
+// Allocate cached ION memory
+CVI_U64 paddr;
+void *vaddr;
+CVI_SYS_IonAlloc_Cached(&paddr, &vaddr, "Frame", size);
+
+// CPU writes data
+memcpy(vaddr, data, size);
+
+// Flush cache to memory before hardware access
+CVI_SYS_IonFlushCache(paddr, vaddr, size);
+
+// Hardware processes data (DMA read)...
+
+// Invalidate cache before CPU reads
+CVI_SYS_IonInvalidateCache(paddr, vaddr, size);
+
+// CPU reads processed data
+memcpy(output, vaddr, size);
+
+// Free when done
+CVI_SYS_IonFree(paddr, vaddr);
+```
+
+**When to Use Cache Operations**:
+- **FlushCache**: After CPU write → Before hardware read
+- **InvalidateCache**: After hardware write → Before CPU read
+- **Non-cached memory**: No cache operations needed (but slower CPU access)
 
 ### 3. Performance Optimization
 

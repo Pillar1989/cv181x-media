@@ -360,7 +360,7 @@ Multiple regions can add up quickly - monitor total memory usage.
 
 ```bash
 # View region information
-cat /proc/umap/rgn
+cat /proc/cvitek/rgn
 ```
 
 ### Common Issues

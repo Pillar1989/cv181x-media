@@ -1,7 +1,7 @@
 # Skill Configuration
 
 # Version
-VERSION=2.0.0
+VERSION=2.1.0
 
 # Auto-update settings
 AUTO_UPDATE_ENABLED=true

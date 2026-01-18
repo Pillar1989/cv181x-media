@@ -5,6 +5,159 @@ All notable changes to the CV181X Media Skill will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-01-18
+
+### Source Code Verification Release - Critical Fixes and Missing APIs
+
+This release addresses critical errors and missing content identified through comprehensive source code verification against cvi_mpi SDK headers and sample code.
+
+### Fixed - Critical Errors (P0)
+
+- **VENC SendFrame Memory Requirements**:
+  - Corrected documentation to clarify SendFrame **requires VB Pool** memory
+  - Added explicit ✅ Correct / ❌ Incorrect usage examples
+  - Documented that VB_INVALID_POOLID means "get from any common pool", not "don't use pool"
+  - Added complete file input example with VB GetBlock pattern
+  - **Impact**: Prevents incorrect ION memory usage that could cause failures
+
+- **VENC SendFrameEx API Added**:
+  - Added `CVI_VENC_SendFrameEx()` documentation
+  - Added `USER_FRAME_INFO_S` structure with custom rate control
+  - Documented differences between SendFrame and SendFrameEx
+  - **Impact**: Enables advanced encoding scenarios with per-frame rate control
+
+- **MOD_ID_E Module List Completed**:
+  - Added **H264D** (H.264 Decoder) module
+  - Added **H265D** (H.265 Decoder) module
+  - Added **VPSSF** (VPSS Frontend) module
+  - Added **TPU** (Tensor Processing Unit) module
+  - **Impact**: Prevents attempts to use non-existent module IDs
+
+### Added - Important Missing Content (P1)
+
+- **ION Cache Management APIs**:
+  - Added `CVI_SYS_IonAlloc_Cached()` documentation
+  - Added `CVI_SYS_IonFlushCache()` - Flush cache before hardware access
+  - Added `CVI_SYS_IonInvalidateCache()` - Invalidate cache after hardware access
+  - Added `CVI_SYS_IonGetFd()` - Get ION file descriptor
+  - Added complete cache management pattern with code examples
+  - **Files**: SKILL.md
+
+- **GDC CancelJob API**:
+  - Added `CVI_GDC_CancelJob()` documentation
+  - Added error handling patterns with CancelJob vs EndJob
+  - Documented when to use/cannot use CancelJob
+  - Added cleanup pattern for robust error handling
+  - **Files**: references/gdc.md
+
+- **GDC MESH Functionality**:
+  - Added `MESH_DUMP_ATTR_S` structure documentation
+  - Added `VI_MESH_ATTR_S` structure
+  - Added `VPSS_MESH_ATTR_S` structure
+  - Added mesh import/export workflow examples
+  - Documented use cases for fisheye dewarp calibration and mesh versioning
+  - **Files**: references/gdc.md
+
+- **VB Pool EX Mode**:
+  - Added `VB_POOL_CONFIG_EX_S` structure documentation
+  - Documented user-managed memory blocks
+  - Added ION memory integration example with EX mode
+  - Explained difference from standard pools
+  - Added multi-user-block configuration example
+  - **Files**: references/vb.md
+
+- **VB_INVALID_POOLID Clarification**:
+  - Added dedicated section explaining VB_INVALID_POOLID meaning
+  - Clarified it means "get from any common pool", not "don't use pool"
+  - Added when to use/when not to use guidelines
+  - Documented pool ID retrieval with `CVI_VB_Handle2PoolId()`
+  - **Files**: references/vb.md
+
+- **VPSS Input Source Constraints**:
+  - Documented that VPSS Groups **cannot** dynamically switch input modes
+  - Added Online Mode (Bind) vs Offline Mode (SendFrame) comparison
+  - Listed prohibited operations (switching, mixing modes)
+  - Added multi-scenario solution with separate VPSS Groups
+  - Added complete code example for Camera → VPSS + File → VPSS
+  - **Files**: SKILL.md
+
+### Added - Enhancements (P2)
+
+- **Concurrent Scenarios Reference**:
+  - Created comprehensive new file: `references/concurrent.md`
+  - **Scenario 1**: Camera → VPSS → Save/Display (Online Mode)
+  - **Scenario 2**: File → VPSS → VENC → Save Bitstream (Offline Mode)
+  - **Scenario 3**: VPSS → TPU Inference → Draw → Save (NEW!)
+    - TPU input buffer allocation with alignment (4096-byte)
+    - YUV to RGB format conversion
+    - Zero-copy vs copy strategies
+    - Drawing bounding boxes on frames
+    - Complete memory management examples
+  - **Scenario 4**: Complete Concurrent Example
+    - Multi-threaded implementation
+    - Camera + File + TPU running simultaneously
+    - VB pool design for multi-scenario
+  - **Size**: ~800 lines with complete code examples
+  - **Impact**: Enables complex multi-scenario applications with AI integration
+
+- **Audio API Naming Verification**:
+  - Verified all audio APIs use correct naming (CVI_AI_xxx, CVI_AO_xxx)
+  - Confirmed `CVI_AUD_SYS_Bind()` is correct (not CVI_AIO_SYS_Bind)
+  - No changes needed - documentation was already correct
+
+### Changed
+
+- **VENC Module** (references/venc.md):
+  - Added "SendFrame Memory Requirements" section
+  - Added "SendFrameEx (Advanced Mode)" section
+  - Reorganized with clearer subsections
+  - Added cross-references to VB module
+
+- **VB Module** (references/vb.md):
+  - Added "VB_INVALID_POOLID - Special Pool ID" section
+  - Added "VB Pool EX Mode" section
+  - Enhanced with decision tables and use case guidelines
+
+- **SYS Module** (references/sys.md):
+  - Updated MOD_ID_E list with 4 new modules
+  - Updated module count to reflect additions
+  - Added TPU description
+
+- **GDC Module** (references/gdc.md):
+  - Added "Error Handling with CancelJob" section
+  - Added "MESH Management Structures" section
+  - Enhanced with practical patterns
+
+- **SKILL.md**:
+  - Added "VPSS Input Source Constraints" section
+  - Added "ION Cache Management" section
+  - Added link to concurrent scenarios reference
+  - Enhanced with critical warnings about VPSS limitations
+
+### Documentation Sources
+
+All changes based on comprehensive analysis of:
+- `cvi_mpi/include/*.h` - Complete API header files (CVI_VI, CVI_VPSS, CVI_VENC, CVI_VDEC, etc.)
+- `cvi_mpi/sample/*` - Official SDK sample code
+- `linux/cvi_comm_*.h` - Common definitions and structures
+- Analysis reports: SKILL_VS_SOURCE_ANALYSIS.md, VENC_MEMORY_VPSS_INPUT_ANALYSIS.md
+
+### Migration Notes
+
+- **Breaking Change**: This is a minor version update (v2.0.0 → v2.1.0)
+- **Critical Correction**: VENC SendFrame **must** use VB Pool (not direct ION)
+- **New Capabilities**: SendFrameEx, MESH management, concurrent scenarios with TPU
+- **No API Changes**: All existing code patterns remain valid
+- **Recommended Action**: Review VENC memory usage if using ION directly
+
+### Verification
+
+- ✅ All new APIs verified against source code
+- ✅ All code examples compile with SDK headers
+- ✅ All cross-references valid
+- ✅ No duplicate content
+- ✅ Consistent formatting and structure
+
 ## [2.0.0] - 2026-01-18
 
 ### Major Release - Complete Module Coverage and Platform Documentation

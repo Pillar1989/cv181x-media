@@ -44,6 +44,56 @@ Allocate Pool → Get Block → Use Buffer → Release Block → Destroy Pool
 - Use **PRIVATE** when module needs guaranteed buffer availability
 - Use **USER** for importing external memory (e.g., from other processes)
 
+### VB_INVALID_POOLID - Special Pool ID
+
+**Definition**: `#define VB_INVALID_POOLID (-1U)`
+
+**Meaning**: "Get block from **any available common pool**"
+
+**Common Misconception**: ❌ Does NOT mean "don't use a pool" or "use ION memory"
+
+#### Correct Usage
+
+```c
+// Get block from any available common pool
+VB_BLK blk = CVI_VB_GetBlock(VB_INVALID_POOLID, size);
+if (blk == VB_INVALID_HANDLE) {
+    printf("No available buffer in any common pool\n");
+    return -1;
+}
+
+// Get the actual pool ID that provided the block
+VB_POOL actual_pool = CVI_VB_Handle2PoolId(blk);
+
+printf("Got block from pool ID: %u\n", actual_pool);
+
+// Use the block...
+CVI_VB_Handle2PhysAddr(blk);
+CVI_VB_GetBlockVirAddr(VB_INVALID_POOLID, phy_addr, NULL);
+
+// Release when done
+CVI_VB_ReleaseBlock(blk);
+```
+
+#### Key Points
+
+- **Searches all common pools**: Tries each common pool in order until finding an available block
+- **Returns actual pool ID**: Use `CVI_VB_Handle2PoolId()` to find which pool provided the block
+- **Not for private pools**: Only searches common pools (not private/user pools)
+- **Common in samples**: Most SDK examples use `VB_INVALID_POOLID` for flexibility
+
+#### When to Use VB_INVALID_POOLID
+
+- **Multi-pool configurations**: When you have multiple common pools and don't care which one provides the buffer
+- **Simplified code**: When you don't need to track specific pool IDs
+- **Standard workflows**: All official SDK samples use this pattern
+
+#### When NOT to Use VB_INVALID_POOLID
+
+- **Specific pool requirement**: When you need a buffer from a particular pool
+- **Private pool usage**: Use the specific private pool ID returned from `CVI_VB_CreatePool()`
+- **Performance optimization**: When you want to avoid pool search overhead
+
 ## Essential APIs
 
 ### Pool Configuration and Initialization
@@ -86,6 +136,110 @@ Allocate Pool → Get Block → Use Buffer → Release Block → Destroy Pool
 - `VB_USER_BLOCK_S` - Structure for user-defined external blocks
 - Supports importing external memory into VB system
 - User blocks must follow VB block alignment requirements
+
+### VB Pool EX Mode (User-Managed Blocks)
+
+**Overview**: VB Pool EX mode allows you to create pools with **user-managed memory blocks**, giving you fine-grained control over memory allocation. This is useful for integrating external memory (e.g., ION memory) into the VB system.
+
+#### VB_POOL_CONFIG_EX_S Structure
+
+```c
+typedef struct _VB_POOL_CONFIG_EX_S {
+    CVI_U32 u32BlkSize;                          // Block size in bytes
+    CVI_U32 u32BlkCnt;                           // Number of blocks
+    VB_REMAP_MODE_E enRemapMode;                 // Remap mode (normally NONE)
+    CVI_CHAR acName[MAX_VB_POOL_NAME_LEN];      // Pool name for debugging
+    VB_USER_BLOCK_S astUserBlk[VB_POOL_MAX_BLK]; // User-managed blocks
+} VB_POOL_CONFIG_EX_S;
+```
+
+#### Key Difference from Standard Pool
+
+| Feature | Standard Pool (`VB_POOL_CONFIG_S`) | EX Mode Pool (`VB_POOL_CONFIG_EX_S`) |
+|---------|-----------------------------------|-------------------------------------|
+| **Memory allocation** | VB system allocates memory | User provides physical addresses |
+| **Use case** | General purpose | External memory integration |
+| **API** | `CVI_VB_CreatePool()` | `CVI_VB_CreatePoolEx()` |
+
+#### Use Cases for EX Mode
+
+- **ION memory integration**: Import ION-allocated memory into VB system
+- **Shared memory**: Use memory shared between processes
+- **Specific memory regions**: Use memory from specific physical addresses
+- **Fine-grained control**: Manage memory allocation manually
+
+#### Example: ION Memory Integration
+
+```c
+// 1. Allocate ION memory
+CVI_U64 ion_paddr[4];  // Up to 4 planes (Y, U, V, ...)
+void *ion_vaddr[4];
+CVI_SYS_IonAlloc(&ion_paddr[0], &ion_vaddr[0], "Plane0", plane0_size);
+CVI_SYS_IonAlloc(&ion_paddr[1], &ion_vaddr[1], "Plane1", plane1_size);
+CVI_SYS_IonAlloc(&ion_paddr[2], &ion_vaddr[2], "Plane2", plane2_size);
+
+// 2. Configure EX mode pool with user blocks
+VB_POOL_CONFIG_EX_S pool_cfg = {
+    .u32BlkSize = total_size,
+    .u32BlkCnt = 1,
+    .enRemapMode = VB_REMAP_MODE_NONE,
+    .acName = "ION_Pool",
+    .astUserBlk[0] = {
+        .au64PhyAddr = { ion_paddr[0], ion_paddr[1], ion_paddr[2], 0 },
+        // Set other fields as needed
+    }
+};
+
+// 3. Create pool with EX mode
+VB_POOL pool = CVI_VB_CreatePoolEx(&pool_cfg);
+if (pool == VB_INVALID_POOLID) {
+    printf("Failed to create EX mode pool\n");
+    return -1;
+}
+
+// 4. Use pool with media modules
+CVI_VPSS_AttachVbPool(VpssGrp, VpssChn, pool);
+
+// ... use the module ...
+
+// 5. Cleanup
+CVI_VPSS_DetachVbPool(VpssGrp, VpssChn);
+CVI_VB_DestroyPool(pool);
+
+// Note: ION memory is NOT freed by VB_DestroyPool
+// You must free ION memory separately:
+CVI_SYS_IonFree(ion_paddr[0], ion_vaddr[0]);
+CVI_SYS_IonFree(ion_paddr[1], ion_vaddr[1]);
+CVI_SYS_IonFree(ion_paddr[2], ion_vaddr[2]);
+```
+
+#### Important Notes
+
+- **Memory ownership**: User retains ownership of external memory
+- **Manual cleanup**: VB_DestroyPool does NOT free user-provided memory
+- **Alignment**: User blocks must follow VB alignment requirements (typically 32-byte aligned)
+- **Multi-plane support**: Each user block can have up to 4 physical addresses (planes)
+- **Error handling**: Check `VB_INVALID_POOLID` return value
+
+#### Advanced: Multiple User Blocks
+
+```c
+VB_POOL_CONFIG_EX_S pool_cfg = {
+    .u32BlkSize = block_size,
+    .u32BlkCnt = 4,  // 4 user blocks
+    .acName = "MultiBlockPool",
+    .astUserBlk = {
+        [0] = { .au64PhyAddr = { ion_addr0_plane0, ion_addr0_plane1, ... } },
+        [1] = { .au64PhyAddr = { ion_addr1_plane0, ion_addr1_plane1, ... } },
+        [2] = { .au64PhyAddr = { ion_addr2_plane0, ion_addr2_plane1, ... } },
+        [3] = { .au64PhyAddr = { ion_addr3_plane0, ion_addr3_plane1, ... } },
+    }
+};
+
+VB_POOL pool = CVI_VB_CreatePoolEx(&pool_cfg);
+```
+
+**See also**: [SYS Module Reference](sys.md) for ION memory allocation APIs.
 
 ## Common Workflows
 

@@ -92,6 +92,151 @@ VI/VPSS → VENC Chn → Bitstream → File/Network
 - `CVI_VENC_AttachVbPool()` - Attach video buffer pool
 - `CVI_VENC_DetachVbPool()` - Detach buffer pool
 
+### SendFrame Memory Requirements
+
+**CRITICAL**: `CVI_VENC_SendFrame()` requires VB Pool memory, **NOT** direct ION memory.
+
+#### Correct Usage - VB Pool Allocation
+
+```c
+// ✅ Correct: Use VB Pool (all official samples follow this pattern)
+VB_BLK blk = CVI_VB_GetBlock(VB_INVALID_POOLID, frame_size);
+
+VIDEO_FRAME_INFO_S frame = {
+    .stVFrame.u64PhyAddr[0] = CVI_VB_Handle2PhysAddr(blk),
+    .stVFrame.pu8VirAddr[0] = CVI_VB_GetBlockVirAddr(blk),
+    .u32PoolId = CVI_VB_Handle2PoolId(blk),  // ← Required!
+    // Set other fields (width, height, format, stride, etc.)
+};
+
+CVI_VENC_SendFrame(chn, &frame, -1);
+
+// Release after encoding completes
+CVI_VB_ReleaseBlock(blk);
+```
+
+#### Incorrect Usage - Direct ION Memory
+
+```c
+// ❌ Incorrect: Direct ION usage is NOT supported
+CVI_SYS_IonAlloc(&ion_paddr, &ion_vaddr, "Frame", frame_size);
+
+VIDEO_FRAME_INFO_S frame = {
+    .stVFrame.u64PhyAddr[0] = ion_paddr,
+    .stVFrame.pu8VirAddr[0] = ion_vaddr,
+    .u32PoolId = VB_INVALID_POOL_ID,  // ← May cause issues
+    // ...
+};
+
+CVI_VENC_SendFrame(chn, &frame, -1);  // ← May fail or behave unexpectedly
+```
+
+#### Key Points
+
+- **VB_INVALID_POOLID**: Means "get block from any available common pool", NOT "don't use a pool"
+- **u32PoolId**: Must be set to a valid pool ID (from `CVI_VB_Handle2PoolId()`)
+- **Source**: All official SDK samples use `CVI_VB_GetBlock()` for SendFrame
+- **File Input**: For file→VENC scenarios, copy file data to VB pool before SendFrame
+
+#### File Input Example (with VB Pool)
+
+```c
+// Read file into temporary buffer
+void *file_data = read_file_to_memory("frame.yuv");
+
+// Allocate VB block
+VB_CAL_CONFIG_S vb_cfg;
+COMMON_GetPicBufferConfig(1920, 1080, PIXEL_FORMAT_YUV_PLANAR_420,
+                         DATA_BITWIDTH_8, COMPRESS_MODE_NONE,
+                         DEFAULT_ALIGN, &vb_cfg);
+
+VB_BLK blk = CVI_VB_GetBlock(VB_INVALID_POOLID, vb_cfg.u32VBSize);
+
+// Construct frame
+VIDEO_FRAME_INFO_S frame;
+frame.stVFrame.u64PhyAddr[0] = CVI_VB_Handle2PhysAddr(blk);
+frame.stVFrame.pu8VirAddr[0] = CVI_VB_GetBlockVirAddr(blk);
+frame.u32PoolId = CVI_VB_Handle2PoolId(blk);
+
+// Copy file data to VB block
+memcpy(frame.stVFrame.pu8VirAddr[0], file_data, vb_cfg.u32VBSize);
+
+// Send to encoder
+CVI_VENC_SendFrame(chn, &frame, -1);
+
+// Cleanup
+free(file_data);
+CVI_VB_ReleaseBlock(blk);
+```
+
+**See also**: [VB Module Reference](vb.md) for pool configuration and buffer allocation.
+
+### SendFrameEx (Advanced Mode)
+
+`CVI_VENC_SendFrameEx()` provides extended frame submission with custom rate control information.
+
+#### API Signature
+
+```c
+CVI_S32 CVI_VENC_SendFrameEx(VENC_CHN VeChn,
+                              const USER_FRAME_INFO_S *pstFrame,
+                              CVI_S32 s32MilliSec);
+```
+
+#### USER_FRAME_INFO_S Structure
+
+```c
+typedef struct _USER_FRAME_INFO_S {
+    VIDEO_FRAME_INFO_S stUserFrame;   // Standard video frame info
+    USER_RC_INFO_S stUserRcInfo;      // Custom rate control info (per-frame)
+} USER_FRAME_INFO_S;
+```
+
+#### Difference from SendFrame
+
+| API | Frame Structure | Features |
+|-----|----------------|----------|
+| **SendFrame** | `VIDEO_FRAME_INFO_S` | Standard frame submission |
+| **SendFrameEx** | `USER_FRAME_INFO_S` | Adds custom rate control per frame |
+
+#### Use Cases
+
+- **Per-frame rate control**: Adjust QP, bitrate, or priority for specific frames
+- **Advanced encoding**: Custom RC parameters for I/P/B frames
+- **Complex scenarios**: Region-specific quality adjustments
+- **Adaptive streaming**: Real-time quality adaptation based on network conditions
+
+#### Example: Custom Rate Control
+
+```c
+// Allocate VB block and construct frame
+VB_BLK blk = CVI_VB_GetBlock(VB_INVALID_POOLID, frame_size);
+VIDEO_FRAME_INFO_S video_frame = {
+    .stVFrame.u64PhyAddr[0] = CVI_VB_Handle2PhysAddr(blk),
+    .stVFrame.pu8VirAddr[0] = CVI_VB_GetBlockVirAddr(blk),
+    .u32PoolId = CVI_VB_Handle2PoolId(blk),
+    // ... set width, height, format, etc.
+};
+
+// Configure custom RC for this frame
+USER_RC_INFO_S rc_info = {
+    .s32Qp = 28,                    // Custom QP value
+    .u32Bitrate = 2000000,          // Target bitrate (bps)
+    .enPriority = RC_PRIORITY_HIGH, // Frame priority
+};
+
+// Construct extended frame
+USER_FRAME_INFO_S user_frame = {
+    .stUserFrame = video_frame,
+    .stUserRcInfo = rc_info,
+};
+
+// Send with custom RC parameters
+CVI_VENC_SendFrameEx(chn, &user_frame, -1);
+```
+
+**Note**: `USER_RC_INFO_S` structure details depend on codec type and platform. Refer to SDK headers for complete field definitions.
+
 ## Common Workflows
 
 ### H.264/H.265 Encoding (Online Mode)

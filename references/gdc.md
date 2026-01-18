@@ -64,6 +64,78 @@ Input Grid        Mesh Mapping      Output Image
 - `CVI_GDC_SetBufWrapAttr()` - Set buffer wrap mode
 - `CVI_GDC_GetBufWrapAttr()` - Get buffer wrap configuration
 
+### MESH Management Structures
+
+GDC provides structures for managing mesh tables and attaching them to VI/VPSS channels:
+
+- **MESH_DUMP_ATTR_S** - Mesh dump attributes for import/export
+- **VI_MESH_ATTR_S** - VI channel mesh attachment
+- **VPSS_MESH_ATTR_S** - VPSS channel mesh attachment
+
+#### MESH_DUMP_ATTR_S Structure
+
+```c
+typedef struct _MESH_DUMP_ATTR_S {
+    CVI_CHAR binFileName[128];  // Mesh binary file path
+    MOD_ID_E enModId;            // Module ID (MOD_ID_VI or MOD_ID_VPSS)
+    union {
+        VI_MESH_ATTR_S viMeshAttr;      // VI mesh attributes
+        VPSS_MESH_ATTR_S vpssMeshAttr;  // VPSS mesh attributes
+    };
+} MESH_DUMP_ATTR_S;
+```
+
+#### VI_MESH_ATTR_S and VPSS_MESH_ATTR_S
+
+```c
+// VI mesh attachment
+typedef struct _VI_MESH_ATTR_S {
+    VI_CHN chn;  // VI channel to attach mesh
+} VI_MESH_ATTR_S;
+
+// VPSS mesh attachment
+typedef struct _VPSS_MESH_ATTR_S {
+    VPSS_GRP grp;  // VPSS group
+    VPSS_CHN chn;  // VPSS channel
+} VPSS_MESH_ATTR_S;
+```
+
+#### Mesh Import/Export Workflow
+
+```c
+// Export mesh from calibration to file
+MESH_DUMP_ATTR_S dump_attr = {
+    .binFileName = "/tmp/fisheye_mesh.bin",
+    .enModId = MOD_ID_VPSS,
+    .vpssMeshAttr = {
+        .grp = 0,
+        .chn = 0
+    }
+};
+
+// Dump mesh to file (after calibration)
+CVI_GDC_DumpMesh(&dump_attr);
+
+// Later: Import mesh file and attach to VI/VPSS
+MESH_DUMP_ATTR_S import_attr = {
+    .binFileName = "/tmp/fisheye_mesh.bin",
+    .enModId = MOD_ID_VI,
+    .viMeshAttr = {
+        .chn = 0  // Attach to VI channel 0
+    }
+};
+
+// Load and attach mesh
+CVI_GDC_LoadMeshWithFile(&import_attr);
+```
+
+#### Use Cases for MESH Management
+
+- **Fisheye dewarp calibration**: Generate mesh offline, import at runtime
+- **Lens distortion correction**: Export calibrated mesh for multiple devices
+- **Custom transformations**: Import externally generated mesh tables
+- **Mesh versioning**: Save/load different mesh profiles for different scenarios
+
 ## Common Workflows
 
 ### 1. Lens Distortion Correction (LDC)
@@ -320,6 +392,89 @@ Apply GDC before entering main processing pipeline for consistent correction.
 - `ROTATION_ATTR_S` - Rotation parameters
 - `GDC_FISHEYE_POINT_2D_S` - Mesh point (x, y coordinates)
 
+## Error Handling with CancelJob
+
+**Use Case**: Cancel a GDC job when an error occurs during task preparation.
+
+**CancelJob vs EndJob**:
+- **EndJob**: Submit job to hardware and wait for completion
+- **CancelJob**: Abort job without submitting (use when error occurs before EndJob)
+
+### Error Handling Pattern
+
+```c
+GDC_HANDLE hHandle;
+CVI_S32 ret;
+
+// Begin job
+ret = CVI_GDC_BeginJob(&hHandle);
+if (ret != CVI_SUCCESS) {
+    printf("Failed to begin GDC job: 0x%x\n", ret);
+    return -1;
+}
+
+// Add tasks
+ret = CVI_GDC_AddLDCTask(hHandle, &stSrcFrame, &stDstFrame, &stLdcAttr);
+if (ret != CVI_SUCCESS) {
+    printf("Failed to add LDC task: 0x%x\n", ret);
+    CVI_GDC_CancelJob(hHandle);  // ← Cancel instead of EndJob
+    return -1;
+}
+
+// Verify output buffer is valid
+if (stDstFrame.stVFrame.pu8VirAddr[0] == NULL) {
+    printf("Invalid output buffer\n");
+    CVI_GDC_CancelJob(hHandle);  // ← Cancel job
+    return -1;
+}
+
+// All checks passed - execute job
+ret = CVI_GDC_EndJob(hHandle);
+if (ret != CVI_SUCCESS) {
+    printf("GDC job execution failed: 0x%x\n", ret);
+    // Note: Job already submitted, cannot cancel at this point
+    return -1;
+}
+
+printf("GDC job completed successfully\n");
+```
+
+### When to Use CancelJob
+
+- **Task preparation fails**: After BeginJob, if AddLDCTask/AddRotationTask fails
+- **Invalid parameters**: If output buffer allocation fails or validation fails
+- **Resource constraints**: If you detect resource exhaustion before submitting job
+- **Early termination**: If application needs to abort processing before submission
+
+### When NOT to Use CancelJob
+
+- **After EndJob**: Once job is submitted, CancelJob has no effect
+- **Normal completion**: Use EndJob for successful jobs
+- **Already executing**: Cannot cancel jobs already being processed by hardware
+
+### Cleanup Pattern
+
+```c
+GDC_HANDLE hHandle;
+CVI_S32 ret = CVI_SUCCESS;
+
+ret = CVI_GDC_BeginJob(&hHandle);
+if (ret == CVI_SUCCESS) {
+    ret = CVI_GDC_AddLDCTask(hHandle, ...);
+    if (ret == CVI_SUCCESS) {
+        ret = CVI_GDC_AddRotationTask(hHandle, ...);
+    }
+}
+
+if (ret == CVI_SUCCESS) {
+    // All tasks added successfully - execute
+    CVI_GDC_EndJob(hHandle);
+} else {
+    // Error occurred - cancel
+    CVI_GDC_CancelJob(hHandle);
+}
+```
+
 ## Header Files
 
 - `/cvi_mpi/include/cvi_gdc.h` - Main GDC API
@@ -346,7 +501,7 @@ Apply GDC before entering main processing pipeline for consistent correction.
 
 ```bash
 # View GDC processing status
-cat /proc/umap/gdc
+cat /proc/cvitek/gdc
 ```
 
 ### Common Issues

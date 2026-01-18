@@ -19,14 +19,18 @@ This skill provides comprehensive knowledge of:
 
 ## Version
 
-Current Version: **v2.0.0**
+Current Version: **v2.1.0**
 
-## What's New in v2.0.0
+## What's New in v2.1.0
 
-- **New Modules**: VDEC (Video Decoding) and Audio subsystem documentation
-- **Platform Coverage**: Complete CV180X vs CV181X platform differences
-- **Enhanced Coverage**: All 29 todo.md items implemented
-- **Complete API Reference**: 11 function categories for SYS, 8 for VB, 10 for VPSS
+- **Source Code Verification**: All APIs verified against cvi_mpi source code
+- **Critical Fixes**: VENC SendFrame memory requirements corrected (must use VB Pool)
+- **Missing APIs Added**: VENC SendFrameEx, USER_FRAME_INFO_S, GDC CancelJob, GDC MESH structures
+- **Module List Complete**: Added H265D, H264D, VPSSF, TPU to MOD_ID_E enumeration
+- **ION Cache Management**: Added IonFlushCache/IonInvalidateCache documentation
+- **VPSS Constraints**: Documented input source mode restrictions (Bind vs SendFrame)
+- **Concurrent Scenarios**: New comprehensive guide with TPU inference path
+- **VB Pool Enhancements**: VB_INVALID_POOLID clarification and EX mode documentation
 
 See [CHANGELOG.md](CHANGELOG.md) for complete details.
 
