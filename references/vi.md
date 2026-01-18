@@ -9,18 +9,48 @@ VI module handles video input from camera sensors through the ISP (Image Signal 
 
 ## Core Concepts
 
-### Three-Layer Architecture
+### Four-Layer Architecture
 
 ```
-VI Device → VI Pipe → VI Channel
-   |           |           |
-Sensor     ISP Pipeline  Output
-Interface   Processing   Streams
+Sensor → DEV → ISP_FE → ISP_BE → CHN → Output
+         |      |        |        |
+      Timing  Stats   Image    Crop/
+      Parse  Store   Process  Rotate
 ```
 
-- **Device (Dev)**: Physical sensor interface (MIPI, DVP, etc.)
-- **Pipe**: ISP processing pipeline (RAW → YUV conversion)
-- **Channel (Chn)**: Output channels with different resolutions/formats
+- **DEV (Device)**: Physical sensor interface that parses timing signals
+- **ISP_FE (ISP Front End)**: Image capture - extracts AE/AWB/AF statistics, stores RAW to DDR
+- **ISP_BE (ISP Back End)**: Image processing - color space conversion, image quality adjustment
+- **CHN (Channel)**: Image correction - crop, rotation, distortion correction
+
+#### DEV (Device Layer)
+- Parses timing signals from sensor
+- Supports multiple interface types: MIPI, LVDS, HISPI, SLVS, BT.1120, BT.656, BT.601
+- Manages physical connection to camera sensor
+
+#### ISP_FE (ISP Front End)
+- Extracts statistical data:
+  - **AE** (Auto Exposure) - Exposure statistics
+  - **AWB** (Auto White Balance) - White balance statistics
+  - **AF** (Auto Focus) - Focus statistics
+- Stores RAW data to DDR memory
+- Supports online (direct) and offline (memory) modes
+
+#### ISP_BE (ISP Back End)
+- Color space conversion (RAW → YUV/RGB)
+- Image quality adjustment:
+  - Brightness, contrast, saturation
+  - Noise reduction (3DNR)
+  - Sharpness enhancement
+- Supports online and offline modes
+
+#### CHN (Channel)
+- Image correction features:
+  - **Crop** - Extract region of interest
+  - **Rotation** - 0°/90°/180°/270°
+  - **Mirror/Flip** - Horizontal/vertical flip
+  - **LDC** - Lens distortion correction
+- Outputs processed frames to VPSS/VENC/User
 
 ### Typical Data Flow
 
@@ -66,6 +96,39 @@ Sensor → VI Dev → VI Pipe → VI Chn → VPSS/VENC/User
 - `CVI_VI_GetChnFlipMirror()` - Get flip/mirror setting
 - `CVI_VI_SetChnLDCAttr()` - Set lens distortion correction
 - `CVI_VI_GetChnLDCAttr()` - Get LDC attributes
+
+### Advanced Features
+
+- `CVI_VI_SetPipeBypassMode()` - Set pipe bypass mode
+- `CVI_VI_SetDevAttrEx()` - Set advanced device attributes (WDR mode)
+- `CVI_VI_SetDevTimingAttr()` - Set self-generating timing attributes
+- `CVI_VI_GetDevTimingAttr()` - Get timing attributes
+
+#### WDR (Wide Dynamic Range)
+- **CV181X**: Supports WDR modes (2To1, 3To1, 4To1 Line/Frame)
+- **CV180X**: Does NOT support HDR
+- Configured via `VI_WDR_ATTR_S` in device attributes
+- Modes: WDR_MODE_BUILT_IN, WDR_MODE_QUDRA, WDR_MODE_2To1_LINE, etc.
+
+#### LDC (Lens Distortion Correction)
+- Corrects lens distortion and fisheye effects
+- Enabled via `VI_LDC_ATTR_S`
+- Must allocate additional VB pool for LDC function
+
+#### 3DNR (3D Noise Reduction)
+- Temporal noise reduction
+- Reduces noise in video sequences
+- Configured via pipe attributes
+
+#### Sharpen
+- Image sharpness enhancement
+- Improves perceived image quality
+- Configured via pipe attributes
+
+#### Bypass Modes
+- **bIspBypass** - Disable ISP processing
+- **bYuvSkip** - Skip downsampling and CSC
+- **b3dnrBypass** - Bypass 3DNR (ALIOS/DUAL OS only)
 
 ### Memory Management
 
@@ -135,3 +198,32 @@ Sensor → VI Dev → VI Pipe → VI Chn → VPSS/VENC/User
 - Channel 0 is typically the main stream (highest resolution)
 - RAW format requires offline ISP processing
 - YUV format can be directly encoded or displayed
+
+### Supported Interface Types (VI_INTF_MODE_E)
+
+**MIPI Interfaces**:
+- `VI_MODE_MIPI` - MIPI RAW mode
+- `VI_MODE_MIPI_YUV420_NORMAL` - MIPI YUV420 normal mode
+- `VI_MODE_MIPI_YUV420_LEGACY` - MIPI YUV420 legacy mode
+- `VI_MODE_MIPI_YUV422` - MIPI YUV422 mode
+
+**Other Digital Interfaces**:
+- `VI_MODE_LVDS` - LVDS mode
+- `VI_MODE_HISPI` - HISPI mode
+- `VI_MODE_SLVS` - SLVS mode
+
+**Parallel Interfaces**:
+- `VI_MODE_BT1120_STANDARD` - BT.1120 progressive mode
+- `VI_MODE_BT1120_INTERLEAVED` - BT.1120 interlaced mode
+- `VI_MODE_BT656` - BT.656 mode
+- `VI_MODE_BT601` - BT.601 mode
+- `VI_MODE_DIGITAL_CAMERA` - Digital camera mode
+
+### Maximum Resolution by Platform
+
+| Platform | Max Resolution | Frame Rate |
+|----------|---------------|------------|
+| **CV181X** | 5M (2880x1620) | 30fps |
+| **CV180X** | 4M (2560x1440) | 30fps |
+
+**Note**: CV180X does NOT support HDR/WDR functions.
