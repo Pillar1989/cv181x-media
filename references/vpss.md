@@ -2,15 +2,18 @@
 
 ## Overview
 
-VPSS provides hardware-accelerated video post-processing including:
-- Scaling (upscale/downscale)
-- Cropping
-- Rotation (0/90/180/270)
-- Format conversion (YUV420/YUV422/RGB)
-- Image enhancement (brightness, contrast, saturation, hue)
-- LDC (Lens Distortion Correction)
+VPSS provides hardware-accelerated video post-processing with **10 major features**:
 
-## Core Concepts
+1. **CROP (裁剪)** - Group-level and channel-level cropping
+2. **Scale (缩放)** - Up to 32x upscale, 1/32 downscale
+3. **Pixel Format Conversion** - YUV420/YUV422/RGB/BGR, planar/packed
+4. **Mirror/Flip (镜像/翻转)** - Horizontal mirror, vertical flip, 180° rotation
+5. **Overlay/OverlayEx** - Video overlay regions
+6. **Fixed Angle Rotation** - 0°/90°/180°/270° via GDC
+7. **Stitch (拼接)** - Multi-channel image stitching
+8. **LDC (Lens Distortion Correction)** - Lens distortion correction
+9. **Deep Learning Pre-processing** - Normalization for TPU
+10. **Proc Amp (色彩控制)** - Brightness, contrast, saturation, hue control
 
 ### Group-Channel Architecture
 
@@ -88,17 +91,71 @@ VI/User → VPSS Grp → VPSS Chn → VENC/VO/User
 - `CVI_VPSS_SetChnYRatio()` - Set Y/C ratio for format conversion
 - `CVI_VPSS_GetRegionLuma()` - Calculate luma statistics for region
 
+### Mirror/Flip (镜像/翻转)
+
+- `CVI_VPSS_SetChnMirror()` - Set horizontal/vertical mirror flip
+- `CVI_VPSS_GetChnMirror()` - Get mirror/flip setting
+
+**Supported Mirror Modes**:
+- Mirror horizontal (left-right flip)
+- Mirror vertical (up-down flip)
+- Mirror both (equivalent to 180° rotation)
+
+### Overlay/OverlayEx (视频叠加)
+
+- `CVI_VPSS_SetOvlCrop()` - Set overlay crop region
+- `CVI_VPSS_GetOvlCrop()` - Get overlay crop settings
+
+**Supported Overlay Formats**:
+- ARGB4444, ARGB1555, ARGB8888
+- 256 LUT, Font-based formats
+
+### Stitch (拼接)
+
+- `CVI_VPSS_SetStitchAttr()` - Configure stitch attributes
+- `CVI_VPSS_GetStitchAttr()` - Get stitch settings
+- `CVI_STITCH_ATTR_S` - Stitch configuration structure
+
+**Use Cases**:
+- Multi-camera panorama
+- Wide-angle surveillance
+- 360° view stitching
+
+### Deep Learning Pre-processing
+
+- `VPSS_NORMALIZE_S` - Normalization configuration for TPU
+- Processed images can be sent to TPU for AI inference
+
+**Features**:
+- Image normalization (mean, scale)
+- Format conversion for TPU input
+- Direct TPU integration support
+
+### Scale Performance
+
+- **Upscale**: Up to 32x magnification
+- **Downscale**: Down to 1/32 of original size
+- **Scale quality levels**: 0-3 (higher = better quality, slower)
+
+## VPSS Features Detail
+
 ## Common Workflows
 
 ### Online Mode (Auto-bind from VI)
 
-1. Create group: `CVI_VPSS_CreateGrp()`
-2. Configure group: `CVI_VPSS_SetGrpAttr()` (input size from VI)
-3. Configure channels: `CVI_VPSS_SetChnAttr()` (output sizes)
-4. Start group: `CVI_VPSS_StartGrp()`
-5. Enable channels: `CVI_VPSS_EnableChn()`
-6. Bind from VI: `CVI_SYS_Bind(VI, VPSS)`
-7. Bind to VENC/VO: `CVI_SYS_Bind(VPSS, VENC/VO)`
+**CRITICAL**: Order matters! Follow this sequence exactly (from official SDK sample):
+
+```
+1. CVI_VPSS_CreateGrp()      // Create group
+2. CVI_VPSS_ResetGrp()       // Reset group (REQUIRED!)
+3. CVI_VPSS_SetChnAttr()     // Configure channels (output sizes)
+4. CVI_VPSS_EnableChn()      // Enable channels FIRST
+5. CVI_VPSS_StartGrp()       // Start group AFTER enable
+6. CVI_SYS_Bind(VI→VPSS)     // Bind LAST (after both VI and VPSS are started)
+```
+
+**Common Mistake**: Binding before StartGrp causes silent failure (empty binding table).
+Verify binding: `cat /proc/cvitek/sys | grep -A 10 "BIND RELATION"`
 
 ### Offline Mode (Manual frame input)
 
