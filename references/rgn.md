@@ -343,6 +343,8 @@ Multiple regions can add up quickly - monitor total memory usage.
 - **VI/VPSS/VENC**: Region attachment targets
 - **VB**: Buffer management for region bitmaps
 
+**See also**: `integration-guide.md` for cross-module design and triage.
+
 ## Notes
 
 - Regions are global objects - can be attached to multiple channels

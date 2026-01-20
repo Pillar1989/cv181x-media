@@ -485,6 +485,8 @@ if (ret == CVI_SUCCESS) {
 - **VI/VPSS**: May have integrated LDC support
 - **VB**: Buffer management for GDC input/output frames
 
+**See also**: `integration-guide.md` for cross-module design and triage.
+
 ## Notes
 
 - GDC is **job-based**: Must use BeginJob/EndJob pattern

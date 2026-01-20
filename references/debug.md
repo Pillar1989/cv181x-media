@@ -176,6 +176,33 @@ cat /proc/cvitek/sys_bind
 
 **Use case**: Verify bindings are correct when data flow is not working.
 
+## Debug Triage Flow (Text Flowchart)
+
+Use this order to avoid chasing secondary symptoms:
+
+```
+[Failure]
+   |
+[Check /dev permissions]
+   |
+[VB/SYS initialized?]
+   |
+[Binding table OK?]
+   |
+[VI RecvPic > 0?]
+   |
+[VPSS RecvCnt > 0?]
+   |
+[VB pool Free > 0?]
+   |
+[Match pool size/format]
+```
+
+**Notes**:
+- Permission issues cause early VB/SYS failures and hide downstream errors.
+- Empty binding table indicates bind order issues or wrong channel IDs.
+- If RecvPic and RecvCnt are 0, fix upstream before tuning pools.
+
 ## Log System
 
 ### Log Levels

@@ -73,7 +73,35 @@ PTS indicates when a frame should be played. The PTS of a decoded frame (from `C
 - `CVI_VDEC_AttachVbPool()` - Bind decoder channel to VB pool
 - `CVI_VDEC_DetachVbPool()` - Unbind from VB pool
 
-**CRITICAL**: For JPEG/MJPEG decoding, a dedicated VB pool must be created before creating the channel. The required VB block size varies by protocol - refer to `vdecInitVBPool()` in sample code.
+**CRITICAL**: For JPEG/MJPEG decoding, ensure an NV21 VB pool exists for the decode size before creating the channel. If `enVdecVBSource` is **USER**, create and attach a dedicated pool; if **COMMON**, size the common pool and skip attach. Refer to `vdecInitVBPool()` in sample code for sizing.
+
+## JPEG Sizing and Initialization (Critical)
+
+JPEG decode stability depends on matching VDEC max dimensions to the actual JPEG resolution.
+
+Text flowchart:
+```
+[Read JPEG Header]
+   |
+[Get Width/Height]
+   |
+[Init VDEC]
+   |
+[StartRecvStream]
+   |
+[Decode]
+```
+
+**Rules**:
+- Initialize `u32PicWidth/u32PicHeight` to the JPEG width/height, not a fixed 1920x1080.
+- Ensure a matching NV21 VB pool exists for that size.
+- If `enVdecVBSource` is common, skip `CVI_VDEC_AttachVbPool`.
+
+**Symptom mapping**:
+- `CVI_VDEC_StartRecvStream` NOMEM → Missing or oversized VB pool for the JPEG size.
+ 
+**See also**: `binding-cookbook.md` for end-to-end JPEG pipeline flow.
+**See also**: `integration-guide.md` for cross-module design and triage.
 
 ### Module Parameters
 

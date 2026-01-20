@@ -27,6 +27,25 @@ Input Frame → Encoder → Bitstream
 VI/VPSS → VENC Chn → Bitstream → File/Network
 ```
 
+### VPSS to VENC Linkage (Recommended)
+
+For camera pipelines, prefer VPSS output as VENC input. This isolates encoding from sensor format and allows multi-resolution outputs.
+
+Text table:
+
+| Source | VENC Input | Binding | VB Pool Requirement |
+| --- | --- | --- | --- |
+| VPSS Chn | VIDEO_FRAME_INFO_S | Recommended | Pool sized to VPSS output format/size |
+| VI Chn (direct) | VIDEO_FRAME_INFO_S | Optional | Pool sized to VI output format/size |
+
+**Design notes**:
+- Use one VPSS channel per encoded stream (e.g., 1080p + 720p).
+- Ensure VB pools exist for each VPSS output size used by VENC.
+- Start VI/VPSS/VENC before binding to avoid silent bind failure.
+ 
+**See also**: `binding-cookbook.md` for minimal binding flows.
+**See also**: `integration-guide.md` for cross-module design and triage.
+
 ## Essential APIs
 
 ### Channel Management

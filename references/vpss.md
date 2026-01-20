@@ -18,7 +18,7 @@ VPSS provides hardware-accelerated video post-processing with **10 major feature
 ### Group-Channel Architecture
 
 ```
-VPSS Group → VPSS Channel (0-3)
+VPSS Group → VPSS Channel (CV181X/CV182X: 0-3, CV180X: 0-2)
      |            |
    Input      Scaled Output
   (1 source)  (Multi-resolution)
@@ -35,6 +35,52 @@ VI/User → VPSS Grp → VPSS Chn → VENC/VO/User
                         ├─ Chn1 (720p)
                         └─ Chn2 (360p)
 ```
+
+### Input Modes and Group Ownership
+
+VPSS groups accept only one input type for their lifetime. Do not mix input modes within a single group.
+
+Text diagram:
+```
+Group A (ISP input):  VI -> ISP -> VPSS -> GetFrame/Bind
+Group B (MEM input):  User/VDEC -> VPSS (Bind VDEC or SendFrame) -> GetFrame
+```
+
+**Input mode matrix**:
+
+| Input Type | Data Source | Binding | SendFrame | Notes |
+| --- | --- | --- | --- | --- |
+| ISP | VI/ISP pipeline | Recommended | Not used | Online flow, lowest latency. |
+| MEM (bound) | VDEC | Supported | Optional | Bind for automatic flow; SendFrame for manual control. |
+| MEM (manual) | User/CPU | Not used | Required | Offline flow, manual submission. |
+
+**Design rule**:
+- If a group uses ISP input, do not call `CVI_VPSS_SendFrame()` on that group.
+- If a group uses MEM input, do not bind VI to that group; use SendFrame or bind VDEC.
+- Use separate groups for camera and file pipelines.
+
+### First-Frame Readiness (Camera Path)
+
+VI/ISP/VPSS can report ready before valid frames are available. If the first `GetChnFrame` fails, treat it as readiness and verify upstream flow.
+
+Text flowchart:
+```
+[Open Camera]
+   |
+[Bind VI->VPSS]
+   |
+[Warmup + Ready Poll]
+   |
+[GetChnFrame]
+```
+
+**Key checks**:
+- `/proc/cvitek/vi` RecvPic should be increasing.
+- `/proc/cvitek/vpss` RecvCnt should be increasing.
+- If both are 0, verify binding and VB pools.
+ 
+**See also**: `binding-cookbook.md` for minimal binding flows.
+**See also**: `integration-guide.md` for cross-module design and triage.
 
 ## Essential APIs
 
@@ -133,8 +179,8 @@ VI/User → VPSS Grp → VPSS Chn → VENC/VO/User
 
 ### Scale Performance
 
-- **Upscale**: Up to 32x magnification
-- **Downscale**: Down to 1/32 of original size
+- **Upscale**: Up to 32x magnification (`VPSS_MAX_ZOOMIN`)
+- **Downscale**: Down to 1/32 of original size (`VPSS_MAX_ZOOMOUT`)
 - **Scale quality levels**: 0-3 (higher = better quality, slower)
 
 ## VPSS Features Detail
@@ -186,16 +232,17 @@ Verify binding: `cat /proc/cvitek/sys | grep -A 10 "BIND RELATION"`
 
 ### Scaling Limits
 
-- **Upscale**: Maximum 16x
-- **Downscale**: Maximum 1/32
+- **Upscale**: Maximum 32x (`VPSS_MAX_ZOOMIN`)
+- **Downscale**: Maximum 1/32 (`VPSS_MAX_ZOOMOUT`)
 - Best quality at 1:1 ratio
 - Use `SetChnScaleCoefLevel()` for quality vs performance trade-off
 
 ### Channel Limitations
 
-- Maximum 4 channels per group (Chn 0-3)
+- CV181X/CV182X: Maximum 4 channels per group (Chn 0-3)
+- CV180X: Maximum 3 channels per group (Chn 0-2)
 - Channel 0: Highest resolution (up to input size)
-- Channel 1-3: Downscaled outputs
+- Channel 1-3: Downscaled outputs (Chn 1-2 on CV180X)
 
 ### Memory Optimization
 
@@ -207,6 +254,8 @@ Verify binding: `cat /proc/cvitek/sys | grep -A 10 "BIND RELATION"`
 
 - `/cvi_mpi/include/cvi_vpss.h` - Main VPSS API
 - `/cvi_mpi/include/linux/cvi_comm_vpss.h` - VPSS common definitions
+- `/cvi_mpi/include/linux/cvi_cv181x_defines.h` - CV181X platform limits
+- `/cvi_mpi/include/linux/cvi_cv180x_defines.h` - CV180X platform limits
 
 ## Related Modules
 

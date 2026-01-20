@@ -249,11 +249,29 @@ VI PIPE can be configured in 4 different modes that determine how data flows bet
 - Use `CVI_SYS_SetVPSSMode()` to configure
 - Use `CVI_SYS_GetVPSSMode()` to query current mode
 
+## Binding and Input Mode Matrix
+
+Binding needs to match the VPSS input type and source. Use one strategy consistently.
+
+Text table:
+
+| Source | VPSS Input | Data Path | Binding | SendFrame |
+| --- | --- | --- | --- | --- |
+| VI (any VI_VPSS mode) | ISP | VI->ISP->VPSS (direct or via memory) | Recommended | Not used |
+| VDEC | MEM | VDEC->VPSS | Supported | Optional |
+| User/CPU | MEM | User->VPSS | Not used | Required |
+
+**Notes**:
+- If VPSS input is ISP, bind VI to VPSS for explicit ownership and easier debug.
+- If VPSS input is MEM, do not bind VI; use SendFrame or bind VDEC.
+- A VPSS group cannot switch input types after start.
+
 ## Memory Management Notes
 
 ### ION vs VB (Video Buffer)
 - **ION**: General-purpose physical memory allocation (for custom buffers)
 - **VB**: Video buffer pool (for automatic frame management in VI/VPSS/VENC)
+ - **See also**: `ion.md` for cache coherency and ION-to-VB integration.
 
 ### Cache Considerations
 - Use **non-cached** for hardware DMA (faster hardware access)
@@ -271,6 +289,8 @@ VI PIPE can be configured in 4 different modes that determine how data flows bet
 
 - **VB**: Video buffer pool (automatic memory management for media modules)
 - **VI/VPSS/VENC/VO**: Media processing modules
+
+**See also**: `integration-guide.md` for cross-module design and triage.
 
 ## All Modules Managed by SYS (MOD_ID_E)
 
@@ -379,6 +399,7 @@ SYS provides thermal management for temperature control:
 - Unbinding must be done BEFORE modules are stopped
 - ION memory is for custom usage; most media modules use VB pools automatically
 - Use `CVI_SYS_TDMACopy()` for fast memory-to-memory copy instead of memcpy
+ - For minimal binding sequences, see `binding-cookbook.md`.
 
 ## Binding Parameter Rules (from official documentation)
 
@@ -401,4 +422,3 @@ stSrcChn.s32ChnId = VpssChn;    // Output channel ID
 cat /proc/cvitek/sys | grep -A 10 "BIND RELATION"
 # Empty table = binding failed silently
 ```
-

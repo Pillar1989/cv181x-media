@@ -30,6 +30,33 @@ This document provides systematic debugging procedures for common issues in CV18
 | ERR_VI_FAILED_NOTCONFIG | Not configured | SetDevAttr/SetPipeAttr not called |
 | ERR_VI_FAILED_NOTENABLE | Not enabled | EnableDev/EnableChn not called |
 
+## Common Runtime Symptoms (Non-Module)
+
+| Symptom | Likely Cause | Fix |
+| --- | --- | --- |
+| `/dev/cvi-*` permission denied | Missing sudo | Run with sudo; confirm device nodes exist. |
+| First GetChnFrame fails (NOBUF) | ISP/VPSS not ready yet | Warm up and poll readiness; check RecvPic/RecvCnt. |
+
+## VDEC JPEG Init Failures
+
+**Symptoms**
+- `CVI_VDEC_StartRecvStream` fails during JPEG decode init.
+- `CVI_VDEC_AttachVbPool` fails when VDEC is configured for common VB.
+- HW JPEG decode init fails even though channel creation succeeded.
+
+**Likely Causes**
+- Missing common VB pool sized for the JPEG output format and resolution (usually NV21).
+- JPEG buffer sizing based on generic picture sizing instead of JPEG-aligned sizing.
+- Attaching a VDEC pool while the module VB source is common (attach is only valid for user VB).
+- VDEC channel max size larger than actual JPEG dimensions, inflating buffer demand.
+
+**Resolution Checklist**
+- Size JPEG output buffers with JPEG-aligned sizing (use the VDEC buffer sizing helpers).
+- Align the stream buffer size to the SDK-required boundary (0x4000).
+- Configure VDEC max width/height to the actual JPEG dimensions whenever possible.
+- Ensure a common VB pool exists for the JPEG output size (add a dedicated 1280x720 NV21 pool when decoding 720p JPEG).
+- Only attach VDEC VB pools when `enVdecVBSource` is user; use common pools otherwise.
+
 ### Common Error Pattern: 0xc006800e (ERR_VPSS_NOBUF)
 
 **Symptom**: `CVI_VPSS_GetChnFrame` returns 0xc006800e

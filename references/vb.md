@@ -44,6 +44,35 @@ Allocate Pool → Get Block → Use Buffer → Release Block → Destroy Pool
 - Use **PRIVATE** when module needs guaranteed buffer availability
 - Use **USER** for importing external memory (e.g., from other processes)
 
+## Pool Sizing Guidance (Camera + VDEC + VPSS)
+
+- Start with NV21 pools sized to the active sensor output. Avoid allocating worst-case 5M pools unless the sensor requires it.
+- Oversized pools can cause `CVI_VB_Init` to fail or make `CVI_VI_EnableChn` return NOMEM (ION allocation failure).
+- JPEG VDEC outputs NV21; ensure a common pool exists for the decode resolution (e.g., add a 1280x720 NV21 pool when decoding 720p JPEG). Missing this pool can make `CVI_VDEC_StartRecvStream` fail.
+- Keep large BGR pools minimal and only at the resolutions needed for CPU/VPSS paths.
+- For VDEC, only attach a VB pool when the module VB source is **USER**. When VB source is common, rely on common pools and skip attach.
+
+### Pool Planning Matrix (Text Table)
+
+| Pipeline Stage | Format | Pool Size Basis | Suggested Count | Why It Matters |
+| --- | --- | --- | --- | --- |
+| VI/ISP output | NV21 | Sensor width/height | >= 3 | Prevents first-frame NOBUF and GetChnFrame failures. |
+| VDEC JPEG output | NV21 | JPEG width/height | 2-3 | Avoids StartRecvStream NOMEM for decode. |
+| VPSS output | BGR/RGB | Target output sizes | 2-3 per size | Ensures VPSS output allocation succeeds. |
+| CPU staging (VB) | BGR/RGB | Input Mat sizes | 1-2 | Reduces pressure on large pools. |
+
+### Pool Count and Concurrency
+
+Text diagram:
+```
+Total VB demand = (VI/ISP pools) + (VDEC pools) + (VPSS outputs) + (VENC inputs)
+```
+
+**Guidance**:
+- If multiple outputs run concurrently (e.g., 1080p + 720p + 640x640), add pool counts per output size.
+- Keep large pools minimal; oversized pools frequently cause VB init failures on memory-limited systems.
+- Track Free and MaxUsed in `/proc/cvitek/vb` to tune counts.
+
 ### VB_INVALID_POOLID - Special Pool ID
 
 **Definition**: `#define VB_INVALID_POOLID (-1U)`
@@ -167,6 +196,7 @@ typedef struct _VB_POOL_CONFIG_EX_S {
 - **Shared memory**: Use memory shared between processes
 - **Specific memory regions**: Use memory from specific physical addresses
 - **Fine-grained control**: Manage memory allocation manually
+ - **Reference**: See `ion.md` for cache coherency and allocation guidance.
 
 #### Example: ION Memory Integration
 
@@ -490,6 +520,8 @@ typedef struct _VB_POOL_CONFIG_S {
 
 - **SYS**: System initialization (must init VB before SYS)
 - **VI/VPSS/VENC/VO**: Buffer consumers (automatically use VB pools)
+
+**See also**: `integration-guide.md` for cross-module design and triage.
 
 ## Notes
 

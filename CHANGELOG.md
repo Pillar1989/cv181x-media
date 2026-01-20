@@ -5,6 +5,25 @@ All notable changes to the CV181X Media Skill will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-01-20
+
+### Added
+
+- `references/overview.md` for system workflow, online/offline modes, and common pipelines
+- `references/platform.md` for SDK layout, platform differences, and pixel formats
+- `references/integration-guide.md` for cross-module design and triage
+- Consolidated concurrent scenarios into `references/binding-cookbook.md`
+
+### Changed
+
+- Clarified VDEC -> VPSS bind vs SendFrame options in system guidance
+- Aligned VPSS scaling limits and channel counts with SDK defines
+- Updated index and README navigation to point to new references
+
+### Removed
+
+- `references/concurrent.md` (superseded by binding cookbook)
+
 ## [2.1.0] - 2026-01-18
 
 ### Source Code Verification Release - Critical Fixes and Missing APIs
@@ -83,8 +102,8 @@ This release addresses critical errors and missing content identified through co
 
 ### Added - Enhancements (P2)
 
-- **Concurrent Scenarios Reference**:
-  - Created comprehensive new file: `references/concurrent.md`
+- **Binding Cookbook (Concurrent Scenarios)**:
+  - Created comprehensive new file: `references/binding-cookbook.md`
   - **Scenario 1**: Camera → VPSS → Save/Display (Online Mode)
   - **Scenario 2**: File → VPSS → VENC → Save Bitstream (Offline Mode)
   - **Scenario 3**: VPSS → TPU Inference → Draw → Save (NEW!)
@@ -131,7 +150,7 @@ This release addresses critical errors and missing content identified through co
 - **SKILL.md**:
   - Added "VPSS Input Source Constraints" section
   - Added "ION Cache Management" section
-  - Added link to concurrent scenarios reference
+  - Added link to binding cookbook reference
   - Enhanced with critical warnings about VPSS limitations
 
 ### Documentation Sources
@@ -146,7 +165,7 @@ All changes based on comprehensive analysis of:
 
 - **Breaking Change**: This is a minor version update (v2.0.0 → v2.1.0)
 - **Critical Correction**: VENC SendFrame **must** use VB Pool (not direct ION)
-- **New Capabilities**: SendFrameEx, MESH management, concurrent scenarios with TPU
+- **New Capabilities**: SendFrameEx, MESH management, binding cookbook with TPU
 - **No API Changes**: All existing code patterns remain valid
 - **Recommended Action**: Review VENC memory usage if using ION directly
 

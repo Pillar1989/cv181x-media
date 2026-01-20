@@ -408,6 +408,8 @@ typedef enum {
 - **SYS**: System binding for audio modules
 - **VB**: Video/audio buffer pool
 
+**See also**: `integration-guide.md` for cross-module design and triage.
+
 ## Notes
 
 ### Parameter Consistency

@@ -1,8 +1,8 @@
 # CV181X-Media Skill Quick Navigation
 
-> Expert Guide for CV181X/CV182X/CV180X Multimedia API v2.1.0
+> Expert Guide for CV181X/CV182X/CV180X Multimedia API v2.3.0
 
-**Last Updated**: 2026-01-18
+**Last Updated**: 2026-01-20
 **Supported Platforms**: Sophgo SG200X Series (CV181X/CV182X/CV180X)
 
 ---
@@ -10,22 +10,26 @@
 ## 🚀 Quick Start
 
 ### For Beginners
-1. 📖 [SKILL.md](SKILL.md) - Main documentation, start here
-2. 📋 [README.md](README.md) - Project overview and version information
-3. 🔄 [CHANGELOG.md](CHANGELOG.md) - Version history and update records
+1. 📖 [overview.md](references/overview.md) - System overview and workflow
+2. 📋 [platform.md](references/platform.md) - SDK layout and platform limits
+3. 📖 [SKILL.md](SKILL.md) - Project SOP and nonstandard workflow
+4. 📋 [README.md](README.md) - Project overview and version information
+5. 🔄 [CHANGELOG.md](CHANGELOG.md) - Version history and update records
 
 ### I Want To...
 
 | Requirement | Recommended Documentation |
 |------|---------|
-| **Understand overall architecture** | [SKILL.md - Module Selection](SKILL.md#1-module-selection-and-architecture-design) |
+| **Understand overall architecture** | [overview.md](references/overview.md) - System overview and workflow |
 | **Quickly configure camera** | [VI Module Reference](references/vi.md) - Complete configuration workflow |
 | **Implement video encoding** | [VENC Module Reference](references/venc.md) - H.264/H.265/JPEG |
 | **Process video streams** | [VPSS Module Reference](references/vpss.md) - Scaling/Rotation/Cropping |
 | **Save/Display video** | [VO Module Reference](references/vo.md) - LCD/HDMI output |
 | **Debug issues** | [Debug Guide](references/debug.md) - /proc filesystem |
 | **Resolve errors** | [Troubleshooting](references/troubleshooting.md) - Error codes and solutions |
-| **Concurrent scenarios** | [Concurrent Scenarios](references/concurrent.md) - Multi-scenario design |
+| **Binding cookbook** | [Binding Cookbook](references/binding-cookbook.md) - Multi-scenario design |
+| **Platform limits** | [platform.md](references/platform.md) - SDK layout and pixel formats |
+| **Integration guide** | [integration-guide.md](references/integration-guide.md) - Cross-module design and triage |
 
 ---
 
@@ -64,6 +68,9 @@
 
 | Documentation | Purpose |
 |------|------|
+| [overview.md](references/overview.md) | System workflow, online/offline modes, common pipelines |
+| [platform.md](references/platform.md) | SDK layout, platform differences, pixel formats |
+| [integration-guide.md](references/integration-guide.md) | VPSS/VENC/VB/Camera/ION integration rules |
 | [debug.md](references/debug.md) | /proc filesystem, log control, runtime monitoring |
 | [troubleshooting.md](references/troubleshooting.md) | Error codes, diagnostic procedures, common issues |
 
@@ -82,14 +89,14 @@
 | AI Vision Camera | [scenarios.md - Scenario 5](references/scenarios.md#5-ai-powered-security-camera) | TPU inference + result drawing |
 | Multi-channel NVR | [scenarios.md - Scenario 6](references/scenarios.md#6-multi-channel-nvr) | Multi-channel video recording |
 
-### Concurrent Scenarios
+### Binding Cookbook Scenarios
 
 | Scenario | Documentation | Difficulty |
 |------|------|------|
-| Camera → VPSS (Online) | [concurrent.md - Scenario 1](references/concurrent.md#scenario-1-camera--vpss--savedisplay-online-mode) | ⭐ Basic |
-| File → VENC (Offline) | [concurrent.md - Scenario 2](references/concurrent.md#scenario-2-file--vpss--venc--save-bitstream-offline-mode) | ⭐⭐ Intermediate |
-| VPSS → TPU Inference | [concurrent.md - Scenario 3](references/concurrent.md#scenario-3-vpss--tpu-inference--draw--save) | ⭐⭐⭐ Advanced |
-| Complete Concurrent Example | [concurrent.md - Scenario 4](references/concurrent.md#scenario-4-complete-concurrent-example) | ⭐⭐⭐⭐ Expert |
+| Camera → VPSS (Online) | [binding-cookbook.md - Scenario 1](references/binding-cookbook.md) | ⭐ Basic |
+| File → VENC (Offline) | [binding-cookbook.md - Scenario 2](references/binding-cookbook.md) | ⭐⭐ Intermediate |
+| VPSS → TPU Inference | [binding-cookbook.md - Scenario 3](references/binding-cookbook.md) | ⭐⭐⭐ Advanced |
+| Complete Concurrent Example | [binding-cookbook.md - Scenario 4](references/binding-cookbook.md) | ⭐⭐⭐⭐ Expert |
 
 ---
 
@@ -98,7 +105,7 @@
 ### Find by Issue Type
 
 #### Initialization Issues
-- [VB-SYS Initialization Order](SKILL.md#important-rules) - Must initialize in sequence
+- [VB-SYS Initialization Order](references/troubleshooting.md#correct-initialization-sequence) - Must initialize in sequence
 - [VPSS Initialization Order](references/vpss.md#quick-start) - EnableChn → StartGrp → Bind
 - [ERR_VPSS_NOBUF Error](references/troubleshooting.md#err_vpss_nobuf-0xc006800e) - Insufficient buffers
 
@@ -110,7 +117,7 @@
 #### Memory Issues
 - [VB Pool Exhaustion](references/vb.md#troubleshooting) - Increase buffer count
 - [VENC SendFrame Memory](references/venc.md#sendframe-memory-requirements) - Must use VB Pool
-- [ION Cache Coherence](SKILL.md#ion-cache-management) - FlushCache/InvalidateCache
+- [ION Cache Coherence](references/ion.md#cache-coherency-rules) - FlushCache/InvalidateCache
 
 ### Debugging Tools
 
@@ -177,7 +184,7 @@ bash scripts/validate_skill.sh
 - **Offline Mode**: File/Memory → VPSS (SendFrame) - Manual control
 - **Multi-scenario**: Use **separate VPSS Groups**
 
-See: [VPSS Input Source Constraints](SKILL.md#vpss-input-source-constraints)
+See: [VPSS Input Source Constraints](references/vpss.md#input-modes-and-group-ownership)
 
 ### VENC SendFrame Memory Requirements
 
@@ -253,7 +260,7 @@ See: [VB Module Reference](references/vb.md)
 ### 3. Learn Best Practices
 
 - Start with [Common Scenarios](references/scenarios.md)
-- Reference [Concurrent Scenarios](references/concurrent.md) for advanced usage
+- Reference [Binding Cookbook](references/binding-cookbook.md) for advanced usage
 - Check [Debug Guide](references/debug.md) for debugging techniques
 
 ---
@@ -287,18 +294,18 @@ Encountered issues or have improvement suggestions?
 
 ### Beginners (First Time Users)
 1. [README.md](README.md) - Understand the project
-2. [SKILL.md - Overview](SKILL.md#overview) - Core concepts
-3. [SKILL.md - Quick Start](SKILL.md#quick-start) - Quick start guide
+2. [overview.md](references/overview.md) - Core concepts and workflow
+3. [platform.md](references/platform.md) - Platform limits and formats
 4. [scenarios.md - Scenario 1](references/scenarios.md#1-video-surveillance-camera) - Practical example
 
 ### Intermediate Users (Familiar with Basics)
-1. [concurrent.md - Multi-Scenario](references/concurrent.md) - Concurrent design
+1. [binding-cookbook.md - Multi-Scenario](references/binding-cookbook.md) - Concurrent design
 2. [venc.md - SendFrameEx](references/venc.md#sendframeex-advanced-mode) - Advanced encoding
 3. [vb.md - EX Mode](references/vb.md#vb-pool-ex-mode-usermanaged-blocks) - Memory optimization
 4. [troubleshooting.md](references/troubleshooting.md) - Problem diagnosis
 
 ### Advanced Users (Deep Optimization)
-1. [SKILL.md - Performance](SKILL.md#3-performance-optimization) - Performance tuning
+1. [overview.md - Performance](references/overview.md#performance-guidance-project-level) - Performance tuning
 2. [gdc.md - MESH Management](references/gdc.md#mesh-management-structures) - Advanced correction
 3. [sys.md - VI/VPSS Working Modes](references/sys.md#vi-vpss-working-modes) - Low-level configuration
 4. [debug.md](references/debug.md) - Deep debugging

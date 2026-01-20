@@ -58,6 +58,29 @@ Sensor → DEV → ISP_FE → ISP_BE → CHN → Output
 Sensor → VI Dev → VI Pipe → VI Chn → VPSS/VENC/User
 ```
 
+### Readiness and First-Frame Behavior
+
+The first valid frame can arrive after a short warm-up period even when VI/ISP appears enabled.
+
+Text flowchart:
+```
+[Enable VI Chn]
+   |
+[Bind to VPSS]
+   |
+[Warmup + Ready Poll]
+   |
+[First Frame]
+```
+
+**What to check**:
+- `/proc/cvitek/vi` RecvPic should be increasing.
+- `/proc/cvitek/vpss` RecvCnt should be increasing for bound pipelines.
+- If both remain 0, verify binding table and VB pools before retrying.
+ 
+**See also**: `binding-cookbook.md` for minimal camera pipeline flow.
+**See also**: `integration-guide.md` for cross-module design and triage.
+
 ## Essential APIs
 
 ### Device Management
@@ -194,7 +217,7 @@ Sensor → VI Dev → VI Pipe → VI Chn → VPSS/VENC/User
 ## Notes
 
 - VI channels can operate in **online mode** (auto-bind to VPSS/VENC) or **offline mode** (manual frame fetch)
-- Maximum 4 VI channels per pipe on CV181X/CV182X
+- Maximum VI channels per pipe: 3 physical + 2 virtual (see `VI_MAX_PHY_CHN_NUM` and `VI_MAX_VIR_CHN_NUM` in platform defines)
 - Channel 0 is typically the main stream (highest resolution)
 - RAW format requires offline ISP processing
 - YUV format can be directly encoded or displayed

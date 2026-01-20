@@ -19,7 +19,15 @@ This skill provides comprehensive knowledge of:
 
 ## Version
 
-Current Version: **v2.1.0**
+Current Version: **v2.3.0**
+
+## What's New in v2.3.0
+
+- **Overview + Platform References**: Added `overview.md` and `platform.md` for system workflow, SDK layout, and pixel formats
+- **Integration Guide**: Added `integration-guide.md` for cross-module design and triage
+- **Binding Cookbook Consolidation**: Concurrent scenarios fully consolidated into `binding-cookbook.md`
+- **Binding Matrix Clarified**: VDEC -> VPSS bind vs SendFrame options clarified and aligned with SDK samples
+- **VPSS Limits Aligned**: Scaling limits and channel counts aligned with SDK defines
 
 ## What's New in v2.1.0
 
@@ -29,7 +37,7 @@ Current Version: **v2.1.0**
 - **Module List Complete**: Added H265D, H264D, VPSSF, TPU to MOD_ID_E enumeration
 - **ION Cache Management**: Added IonFlushCache/IonInvalidateCache documentation
 - **VPSS Constraints**: Documented input source mode restrictions (Bind vs SendFrame)
-- **Concurrent Scenarios**: New comprehensive guide with TPU inference path
+- **Binding Cookbook**: Consolidated concurrent scenarios with TPU inference path
 - **VB Pool Enhancements**: VB_INVALID_POOLID clarification and EX mode documentation
 
 See [CHANGELOG.md](CHANGELOG.md) for complete details.
@@ -52,6 +60,9 @@ cv181x-media/
 │   ├── gdc.md           # Geometric Distortion Correction
 │   ├── debug.md         # Debugging guide
 │   ├── troubleshooting.md
+│   ├── overview.md      # System overview and workflow
+│   ├── platform.md      # SDK layout and platform limits
+│   ├── integration-guide.md # Cross-module integration rules
 │   └── scenarios.md     # Common scenarios
 ├── scripts/              # Automation scripts
 │   ├── update_from_sdk.sh

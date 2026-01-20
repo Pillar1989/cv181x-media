@@ -140,6 +140,8 @@ VI/VPSS → VO Chn → VO Layer → VO Dev → Display
 - **SYS**: System binding
 - **Panel**: LCD panel initialization
 
+**See also**: `integration-guide.md` for cross-module design and triage.
+
 ## Notes
 
 - VO operates in **online mode** (auto-bind) or **offline mode** (manual SendFrame)
